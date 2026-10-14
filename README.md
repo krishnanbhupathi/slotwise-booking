@@ -16,8 +16,10 @@ Booking and deposits for solo tutors. A tutor shares one link. Students pick a t
 | ✅ | Slot picker across time zones and daylight-saving changes, shown in the student's zone |
 | ✅ | Stripe Checkout deposit (test mode), 10-minute hold, idempotent webhooks, auto-refund of late payments for taken slots |
 | ✅ | Free services confirm instantly |
-| ⏳ | Confirmation email with `.ics`, 24-hour reminder, cancel and refund |
-| ⏳ | Provider dashboard: upcoming bookings and payments |
+| ✅ | Confirmation email with `.ics`, 24-hour reminder, cancel/reschedule emails that update the calendar event |
+| ✅ | Client cancel (deposit refunded until 24h before) and reschedule (deposit carries over) |
+| ✅ | Provider dashboard: upcoming bookings (cancel with refund) and payments |
+| ✅ | Demo account reset nightly, with sample bookings |
 
 ## Stack
 
@@ -45,6 +47,7 @@ Pay with card `4242 4242 4242 4242`, any future expiry, any CVC.
 
 ```bash
 npm test            # unit + database tests (no database server needed)
+npm run test:e2e    # Playwright, desktop + mobile, against a production build (needs a local Postgres DB "slotwise_e2e")
 npm run typecheck
 npm run lint
 ```
@@ -63,6 +66,12 @@ npm run lint
 
 **Late payments.** Stripe Checkout sessions last at least 30 minutes, but a hold lasts 10. A payment that arrives after its hold lapsed confirms only if the slot is still free; a database savepoint lets the exclusion constraint decide. Otherwise the deposit is refunded automatically.
 
+**Emails go out after the commit.** A failed email never undoes a booking. Emails are sent through `after()` once the database change has committed, and failures are logged. *Trade-off:* a failed email isn't retried; a durable outbox table is the next step. The `.ics` attachment keeps one UID per booking and increments `SEQUENCE` on each change, so a reschedule or cancellation updates the event already in the client's calendar.
+
+**Reminders can't double-send.** An hourly job claims due reminders with a single `UPDATE … SET sent_at = now() … RETURNING`. Two overlapping runs can't claim the same row, and a failed send is un-claimed so the next run retries it. The job is triggered from GitHub Actions ([`.github/workflows/cron.yml`](./.github/workflows/cron.yml)), because Vercel's free plan runs crons at most once a day.
+
+**The 24-hour rule lives in one place.** [`src/lib/policy.ts`](./src/lib/policy.ts) decides whether a client cancellation refunds the deposit and whether rescheduling is offered. The booking page, the server actions and the emails all read it.
+
 **Money is integer cents.** Prices are parsed from strings straight into cents (`"45.50"` → `4550`), so the code never does floating-point arithmetic on money.
 
 **Sessions are signed JWT cookies.** Auth.js's credentials provider, which powers the demo button, requires them, and they save a database read per request. *Trade-off:* a session can't be revoked server-side before it expires.
@@ -79,7 +88,7 @@ npm run lint
 | `services` | Name, duration, price and deposit (cents), buffer, active flag |
 | `availability_rules` | Weekly hours: ISO weekday + start/end wall-clock time in the provider's zone |
 | `date_overrides` | One per date: closed, or custom hours replacing the weekly rule |
-| `bookings` | Client details and note, `starts_at`/`ends_at`/`blocks_until`, status (`held`, `confirmed`, `cancelled`, `refunded`, `expired`), hold expiry |
+| `bookings` | Client details and note, `starts_at`/`ends_at`/`blocks_until`, status (`held`, `confirmed`, `cancelled`, `refunded`, `expired`), hold expiry, `.ics` sequence, who cancelled and when |
 | `payments` | Stripe Checkout session, amount, status |
 | `reminders` | When to send, when sent |
 | `stripe_events` | Ids of processed Stripe webhook events (idempotency) |
@@ -88,3 +97,5 @@ npm run lint
 ## Deploying
 
 Vercel runs `npm run db:migrate && npm run build` (see `vercel.json`). Set the variables from `.env.example` in the Vercel project. Use Neon's **pooled** connection string for `DATABASE_URL`. In the Stripe dashboard (test mode), add a webhook endpoint at `https://<your-domain>/api/stripe/webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `checkout.session.expired`, and put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+
+Scheduled jobs: set a random `CRON_SECRET` on Vercel, and add GitHub repository secrets `APP_URL` (the production URL) and `CRON_SECRET` (same value). The workflow skips quietly until both are set.
