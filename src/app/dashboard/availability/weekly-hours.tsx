@@ -42,7 +42,7 @@ export function WeeklyHours({ initial }: { initial: WeeklyAvailability }) {
         return (
           <fieldset key={day.iso} className="flex flex-wrap items-start gap-x-6 gap-y-3 px-5 py-4" aria-describedby={error ? `day-${day.iso}-error` : undefined}>
             <legend className="sr-only">{day.name}</legend>
-            <label className="flex w-36 items-center gap-2 pt-2 text-sm font-medium">
+            <label className="flex w-full items-center gap-2 pt-2 text-sm font-medium sm:w-36">
               <input
                 type="checkbox"
                 className="size-4 accent-brand-700"
@@ -54,7 +54,7 @@ export function WeeklyHours({ initial }: { initial: WeeklyAvailability }) {
             <div className="flex-1 space-y-2">
               {ranges.length === 0 && <p className="pt-2 text-sm text-stone-500">Unavailable</p>}
               {ranges.map((range, i) => (
-                <div key={i} className="flex flex-wrap items-center gap-2">
+                <div key={i} className="flex items-center gap-2">
                   <TimeSelect
                     label={`${day.name} range ${i + 1} start`}
                     value={range.start}
@@ -135,7 +135,7 @@ function TimeSelect({
       aria-invalid={invalid}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-32"
+      className="w-28 sm:w-32"
     >
       {options.map((t) => (
         <option key={t} value={t}>

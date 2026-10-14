@@ -5,13 +5,16 @@ export type Email = { to: string; subject: string; html: string; text: string; a
 
 /**
  * Sends through Resend when RESEND_API_KEY is set. Without a key (local dev,
- * CI) the email is printed to the server console instead, so every flow can
- * be clicked through with no third-party account.
+ * end-to-end tests) the email is printed to the server console instead, so
+ * every flow can be clicked through with no third-party account.
  */
 export async function sendEmail(email: Email): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    if (process.env.NODE_ENV === "production") throw new Error("RESEND_API_KEY is not set");
+    // Production must not silently drop emails; end-to-end tests opt in to console output.
+    if (process.env.NODE_ENV === "production" && process.env.ALLOW_CONSOLE_EMAIL !== "true") {
+      throw new Error("RESEND_API_KEY is not set");
+    }
     const files = email.attachments?.map((a) => a.filename).join(", ");
     console.info(`\n[email] to=${email.to} subject="${email.subject}"${files ? ` attachments=${files}` : ""}\n${email.text}\n`);
     return;
