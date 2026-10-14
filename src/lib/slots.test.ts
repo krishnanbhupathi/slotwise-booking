@@ -185,8 +185,9 @@ describe("generateSlots — existing bookings, notice and horizon", () => {
 
   it("uses the default rules (12h notice, 30 days, 30-min grid) when none are given", () => {
     const everyDay = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "09:00", end: "10:00" }));
-    const { minNoticeMin: _n, horizonDays: _h, ...rest } = input({ weekly: everyDay, now: new Date("2026-10-19T00:00Z") });
-    const slots = generateSlots(rest);
+    const slots = generateSlots(
+      input({ weekly: everyDay, now: new Date("2026-10-19T00:00Z"), minNoticeMin: undefined, horizonDays: undefined }),
+    );
     // 09:00 BST today is only 8h away, so the first slot is tomorrow.
     expect(slots[0].start.toISOString()).toBe("2026-10-20T08:00:00.000Z");
     expect(slots).toHaveLength(29);
