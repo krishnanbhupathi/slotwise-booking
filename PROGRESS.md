@@ -16,7 +16,8 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
   - the webhook returns 400 for unsigned events;
   - the GitHub cron workflow ran against production and returned `{"sent":0,"failed":0,"expiredHolds":0}`.
 - Stripe test-mode webhook endpoint `we_1UQa2OPu6A3W7fflYOFQUc03` points at the live URL, for the three checkout events.
-- **Not yet verified on production:** a real test payment (Krishna to run it; see "Blocked on Krishna"). Emails aren't configured, so magic-link sign-in fails and booking emails error in the logs until Resend is set up. The demo login doesn't need email.
+- **Real test payment on production (15 Oct, Krishna):** booking `confirmed`, $15.00 deposit `paid`, one `checkout.session.completed` stored. No reminder row because the lesson was <24h away, by design.
+- **Email:** Resend domain `mail.bhupathi.dev` verified (DKIM + SPF via Cloudflare Domain Connect, region us-east-1). The Resend key has sending access to that domain only. Sender: `Slotwise <bookings@mail.bhupathi.dev>`. A magic-link email to Krishna's Gmail showed "Delivered" in Resend.
 
 **Stripe sandbox check (15 Oct, local production build + `stripe listen`):**
 - Paid $10 deposit with card 4242 → `checkout.session.completed` → booking confirmed, payment paid, reminder created.
@@ -74,20 +75,14 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 | Day 3 | Stripe sandbox (no business verification) | Stripe India is invite-only for live accounts; test mode needs none |
 | 15 Oct | One Neon project (us-east-2) for both apps, one database each; Vercel functions in `cle1` | Krishna's existing Neon project; function and database in the same metro |
 | 15 Oct | Production secrets generated fresh and piped CLI→Vercel | Never shown in chat or committed |
+| 15 Oct | Send from the subdomain `mail.bhupathi.dev` | Krishna; keeps sending reputation and DNS separate from the portfolio domain |
 
 ### Blocked on Krishna
-- **Test payment on production:** book a paid slot on the live site, then check the booking shows as confirmed in the dashboard.
-- **Resend:**
-  - sign up (Gmail is fine for the account);
-  - verify `bhupathi.dev`;
-  - send from an address on that domain, e.g. `Slotwise <bookings@bhupathi.dev>`.
-  - Then set `RESEND_API_KEY` and `EMAIL_FROM` in Vercel and redeploy.
 - Optional: a custom domain (e.g. `slotwise.bhupathi.dev`). If added, update `AUTH_URL`, the GitHub `APP_URL` secret and the Stripe webhook URL.
 - **Roll the Stripe secret key** after the project (it was pasted in chat).
 
 ### Known issues
 - Preview deployments have no database (migrations skipped); production only for now.
-- Email isn't configured in production yet (see above).
 - Browser automation (Claude in Chrome) sometimes loses the first click on a freshly loaded page; Playwright (which clicks immediately) passes, so treated as a tooling artefact, not an app bug.
 - Picker copy "the rest is paid to the tutor directly" still needs Krishna's OK.
 - The e2e test "rescheduling isn't offered inside 24 hours" skips itself if the earliest slot happens to be more than 24h away at that time of day.
