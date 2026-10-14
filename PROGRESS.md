@@ -2,7 +2,26 @@
 
 Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7 Thu 22 Oct 2026.
 
-## Status — end of session 3 (Day 3 scope)
+## Status: Day 6 (intake forms from Formwise)
+
+**Day 6 (15 Oct): clients now answer a tutor's Formwise form when booking.** Deployed and smoke-tested on production; CI green.
+- **Attaching a form:** a tutor pastes a Formwise share link on a service (`src/app/dashboard/services/intake-section.tsx`).
+  - The server fetches the published version, only ever from the Formwise origin (`FORMWISE_ORIGIN`), validates it with Formwise's `parseFormSchema`, and stores its own copy on `services.intake_form`.
+  - **Refresh** pulls the latest version; **Remove** detaches it.
+- **Booking page:** shows the questions with the vendored `<FormFields>` inside Slotwise's form.
+  - The server action validates answers with `validateSubmission` *before* any hold or Stripe session.
+  - Answers are stored with their labels on `bookings.intake`.
+  - Shown in the dashboard and in the tutor's new-booking email.
+- **Renderer** vendored in `src/vendor/formwise`, via `node scripts/sync-formwise.mjs` (records the source commit and rewrites `.js` specifiers for Next's bundler). Decision: no npm publish (Krishna).
+- **Demo:** A-level Physics has a real published Formwise form (`/f/jmdpq5gycd`); one sample booking carries answers. Its edit link is in `.env.local` as `FORMWISE_DEMO_EDIT_URL`.
+- **Production smoke (15 Oct):**
+  - Refresh fetched the live Formwise form;
+  - an empty intake was rejected server-side and created no booking;
+  - the dashboard shows the sample answers;
+  - no page errors.
+- **Tests:** **151 Vitest** (+20: link parsing incl. SSRF cases, fetch errors, provider scoping, server validation, hold storage, email, demo) + **18 Playwright** (desktop + Pixel 7), all passing locally and in CI.
+
+## Earlier status: end of session 3 (Day 3 scope)
 
 **The booking tool is feature-complete, tested, and green in CI (unit + e2e). Real Stripe (sandbox) payments are verified locally.**
 
@@ -75,6 +94,9 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 | Day 3 | Stripe sandbox (no business verification) | Stripe India is invite-only for live accounts; test mode needs none |
 | 15 Oct | One Neon project (us-east-2) for both apps, one database each; Vercel functions in `cle1` | Krishna's existing Neon project; function and database in the same metro |
 | 15 Oct | Production secrets generated fresh and piped CLI→Vercel | Never shown in chat or committed |
+| Day 6 | Tutors attach a Formwise share link; Slotwise keeps a copy (with Refresh) | Krishna; bookings never depend on Formwise being up |
+| Day 6 | Renderer vendored, not installed from npm | Krishna; sync script keeps it identical to Formwise |
+| Day 6 | Intake answers validated in the server action before the hold | Invalid answers never create holds or Stripe sessions |
 | 15 Oct | Send from the subdomain `mail.bhupathi.dev` | Krishna; keeps sending reputation and DNS separate from the portfolio domain |
 
 ### Blocked on Krishna
@@ -83,6 +105,8 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 
 ### Known issues
 - Preview deployments have no database (migrations skipped); production only for now.
+- An attached intake form is a copy: changes published in Formwise appear only after the tutor clicks Refresh (by design, so bookings don't depend on Formwise being up).
+- Intake conditions only support "equals one value" (a Formwise limitation).
 - Browser automation (Claude in Chrome) sometimes loses the first click on a freshly loaded page; Playwright (which clicks immediately) passes, so treated as a tooling artefact, not an app bug.
 - Picker copy "the rest is paid to the tutor directly" still needs Krishna's OK.
 - The e2e test "rescheduling isn't offered inside 24 hours" skips itself if the earliest slot happens to be more than 24h away at that time of day.
