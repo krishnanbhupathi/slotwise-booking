@@ -8,6 +8,7 @@ import { cityName, formatDateTimeIn } from "@/lib/format";
 import { bookingDetailsSchema, fieldErrors } from "@/lib/validation";
 import { getBaseUrl } from "@/server/base-url";
 import { placeHold, releaseHold } from "@/server/bookings";
+import { checkIntake } from "@/server/intake";
 import { notifyConfirmed } from "@/server/notifications";
 import { getPublicProvider, getPublicService } from "@/server/public";
 import { createDepositCheckout, getStripe } from "@/server/stripe";
@@ -18,9 +19,11 @@ export type BookingFormState = {
   /** The chosen time is gone; the picker should refresh its slots. */
   slotGone?: boolean;
   values?: Record<string, string>;
+  /** Intake answers that failed server-side validation, keyed by question id. */
+  intakeErrors?: Record<string, string>;
 } | null;
 
-const FIELDS = ["startsAt", "name", "email", "note", "timezone"] as const;
+const FIELDS = ["startsAt", "name", "email", "note", "timezone", "intake"] as const;
 
 export async function createBooking(
   handle: string,
@@ -34,7 +37,16 @@ export async function createBooking(
   if (!provider || !service) return { message: "This service is no longer available.", values };
 
   const parsed = bookingDetailsSchema.safeParse(values);
-  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+  // Intake answers are checked with Formwise's validation here, on the server, before any hold or payment.
+  const intake = checkIntake(service.intakeForm, values.intake ?? "");
+  if (!parsed.success || !intake.ok) {
+    return {
+      errors: parsed.success ? undefined : fieldErrors(parsed.error),
+      intakeErrors: intake.ok ? undefined : intake.errors,
+      message: intake.ok ? undefined : "Some answers need attention.",
+      values,
+    };
+  }
   const details = parsed.data;
   const now = new Date();
 
@@ -46,6 +58,7 @@ export async function createBooking(
     clientEmail: details.email,
     clientTimezone: details.timezone,
     note: details.note,
+    intake: intake.intake,
     now,
   });
   if (!hold.ok) {

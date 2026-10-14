@@ -13,6 +13,7 @@ export function listUpcomingBookings(db: Database, providerId: string, now: Date
       clientEmail: bookings.clientEmail,
       clientTimezone: bookings.clientTimezone,
       note: bookings.note,
+      intake: bookings.intake,
       serviceName: services.name,
       depositCents: payments.amountCents,
       currency: payments.currency,

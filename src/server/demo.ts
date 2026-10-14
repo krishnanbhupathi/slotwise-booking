@@ -3,6 +3,7 @@ import { availabilityRules, bookings, dateOverrides, payments, providers, remind
 import type { Database } from "@/db/types";
 import { generateSlots } from "@/lib/slots";
 import { loadSlotInput } from "./bookings";
+import { DEMO_INTAKE_ANSWERS, DEMO_INTAKE_FORM } from "./demo-intake";
 
 const DEMO_SERVICES = [
   { slug: "gcse-maths", name: "GCSE Maths – 1:1", description: "Exam-focused practice and past papers.", durationMin: 60, priceCents: 4500, depositCents: 1000, bufferMin: 15 },
@@ -48,10 +49,13 @@ export async function resetDemo(db: Database, email: string, now: Date) {
       const [row] = await tx
         .insert(services)
         .values({ providerId: provider.id, ...s })
-        .onConflictDoUpdate({ target: [services.providerId, services.slug], set: { ...s, active: true } })
+        .onConflictDoUpdate({ target: [services.providerId, services.slug], set: { ...s, active: true, intakeForm: null } })
         .returning();
       rows.push(row);
     }
+    // Physics asks a few intake questions (a form built in Formwise) to show the integration.
+    const physics = rows[1];
+    await tx.update(services).set({ intakeForm: { ...DEMO_INTAKE_FORM, fetchedAt: now.toISOString() } }).where(eq(services.id, physics.id));
     await tx.insert(availabilityRules).values([
       ...[1, 2, 3, 4, 5].map((weekday) => ({ providerId: provider.id, weekday, startTime: "16:00", endTime: "20:00" })),
       { providerId: provider.id, weekday: 6, startTime: "10:00", endTime: "14:00" },
@@ -66,18 +70,21 @@ export async function resetDemo(db: Database, email: string, now: Date) {
     for (const [i, slot] of picks.entries()) {
       if (!slot) continue;
       const client = SAMPLE_CLIENTS[i];
+      // The last sample is a Physics booking with intake answers.
+      const service = i === 2 ? physics : maths;
       const [booking] = await tx
         .insert(bookings)
         .values({
           providerId: provider.id,
-          serviceId: maths.id,
+          serviceId: service.id,
           clientName: client.name,
           clientEmail: client.email,
           clientTimezone: client.timezone,
           note: client.note,
+          intake: i === 2 ? DEMO_INTAKE_ANSWERS : null,
           startsAt: slot.start,
           endsAt: slot.end,
-          blocksUntil: new Date(slot.end.getTime() + maths.bufferMin * 60_000),
+          blocksUntil: new Date(slot.end.getTime() + service.bufferMin * 60_000),
           status: "confirmed",
         })
         .returning();
@@ -85,8 +92,8 @@ export async function resetDemo(db: Database, email: string, now: Date) {
         bookingId: booking.id,
         stripeSessionId: `cs_demo_${booking.id}`,
         stripePaymentIntentId: `pi_demo_${booking.id}`,
-        amountCents: maths.depositCents,
-        currency: maths.currency,
+        amountCents: service.depositCents,
+        currency: service.currency,
         status: "paid",
       });
       await tx.insert(reminders).values({ bookingId: booking.id, sendAt: new Date(slot.start.getTime() - 86_400_000) });

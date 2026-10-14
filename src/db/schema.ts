@@ -1,3 +1,4 @@
+import type { FieldValue, FormSchema } from "@/vendor/formwise/core";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -21,6 +22,24 @@ import {
 // Auth.js tables (shape required by @auth/drizzle-adapter).
 // Sessions live in a signed JWT cookie, so there is no sessions table.
 // ---------------------------------------------------------------------------
+
+/** A Formwise form attached to a service: our own copy, so booking never depends on Formwise being up. */
+export type IntakeFormRef = {
+  formId: string;
+  version: number;
+  /** The public share link the tutor pasted. */
+  sourceUrl: string;
+  fetchedAt: string;
+  schema: FormSchema;
+};
+
+/** Intake answers stored on a booking: visible questions only, in form order. */
+export type IntakeAnswers = {
+  formId: string;
+  version: number;
+  title: string;
+  answers: { id: string; label: string; value: FieldValue }[];
+};
 
 export const users = pgTable("users", {
   id: text("id")
@@ -104,6 +123,8 @@ export const services = pgTable(
     bufferMin: integer("buffer_min").notNull().default(0),
     /** Archived services keep their bookings but disappear from the booking page. */
     active: boolean("active").notNull().default(true),
+    /** A published Formwise form, copied in when the tutor attached it (see src/server/intake.ts). */
+    intakeForm: jsonb("intake_form").$type<IntakeFormRef>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -183,8 +204,8 @@ export const bookings = pgTable(
     icsSequence: integer("ics_sequence").notNull().default(0),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     cancelledBy: text("cancelled_by", { enum: ["client", "provider"] }),
-    /** Answers from the intake form (form builder renderer). */
-    intake: jsonb("intake"),
+    /** Answers from the service's intake form, with labels as they were at booking time. */
+    intake: jsonb("intake").$type<IntakeAnswers>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

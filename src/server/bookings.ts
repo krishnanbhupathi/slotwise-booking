@@ -1,5 +1,5 @@
 import { and, eq, gt, inArray, lte, ne, or } from "drizzle-orm";
-import { availabilityRules, bookings, dateOverrides, type Provider, type Service } from "@/db/schema";
+import { availabilityRules, bookings, dateOverrides, type IntakeAnswers, type Provider, type Service } from "@/db/schema";
 import type { Database } from "@/db/types";
 import { EXCLUSION_VIOLATION, pgErrorCode } from "@/lib/db-errors";
 import { BOOKING_RULES, isAvailableStart, type SlotInput } from "@/lib/slots";
@@ -57,6 +57,8 @@ export type HoldRequest = {
   clientEmail: string;
   clientTimezone: string | null;
   note: string | null;
+  /** Answers to the service's intake form, already validated (see checkIntake). */
+  intake?: IntakeAnswers | null;
   now: Date;
 };
 
@@ -105,6 +107,7 @@ export async function placeHold(db: Database, req: HoldRequest): Promise<HoldRes
           clientEmail: req.clientEmail,
           clientTimezone: req.clientTimezone,
           note: req.note,
+          intake: req.intake ?? null,
           startsAt: req.startsAt,
           endsAt,
           blocksUntil,

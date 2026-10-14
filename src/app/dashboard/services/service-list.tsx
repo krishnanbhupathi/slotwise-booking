@@ -5,6 +5,7 @@ import { Button, Card } from "@/components/ui";
 import type { Service } from "@/db/schema";
 import { formatMoney } from "@/lib/validation";
 import { deleteService, setActive } from "./actions";
+import { IntakeSection } from "./intake-section";
 import { ServiceForm } from "./service-form";
 
 export function ServiceList({ services }: { services: Service[] }) {
@@ -97,6 +98,7 @@ function ServiceRow({ service }: { service: Service }) {
           )}
         </div>
       </div>
+      {service.active && <IntakeSection service={service} />}
     </Card>
   );
 }

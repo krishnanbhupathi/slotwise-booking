@@ -16,3 +16,17 @@
 body {
   @apply bg-stone-50 text-stone-900;
 }
+
+/* Formwise intake questions on the booking page, themed with Slotwise's tokens. */
+.slotwise-intake .fw-root {
+  --fw-text: var(--color-stone-900);
+  --fw-muted: var(--color-stone-500);
+  --fw-border: var(--color-stone-300);
+  --fw-bg: #fff;
+  --fw-accent: var(--color-brand-700);
+  --fw-error: var(--color-red-700);
+  --fw-radius: 0.375rem;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+.slotwise-intake .fw-label { font-weight: 500; font-size: 0.875rem; }

@@ -5,6 +5,9 @@ import { useActionState, useEffect, useState } from "react";
 import { SlotGrid, SlotGridSkeleton, useViewerZone, type ZoneOption } from "@/components/slot-grid";
 import { Button, Card, Field, FormMessage, Input, Textarea } from "@/components/ui";
 import { formatDateTimeIn, formatTimeIn } from "@/lib/format";
+import { FormFields } from "@/vendor/formwise/FormRenderer";
+import type { FormSchema, FormValues } from "@/vendor/formwise/core";
+import "@/vendor/formwise/styles.css";
 import { createBooking } from "./actions";
 
 export function SlotPicker({
@@ -15,6 +18,7 @@ export function SlotPicker({
   providerTimeZone,
   depositLabel,
   timeZones,
+  intakeForm,
 }: {
   handle: string;
   slug: string;
@@ -24,17 +28,23 @@ export function SlotPicker({
   providerTimeZone: string;
   depositLabel: string | null;
   timeZones: ZoneOption[];
+  /** The service's Formwise intake form, if the tutor attached one. */
+  intakeForm: FormSchema | null;
 }) {
   const router = useRouter();
   const { zone, setZone, zoneOptions } = useViewerZone(timeZones);
   const [state, action, pending] = useActionState(createBooking.bind(null, handle, slug), null);
   const [picked, setPicked] = useState<string | null>(null);
+  const [intake, setIntake] = useState<FormValues>({});
+  // Server errors stay until the person edits that answer.
+  const [intakeErrors, setIntakeErrors] = useState<Record<string, string>>({});
 
   // The chosen time was taken while the form was open: clear the choice and reload slots.
   const [seenState, setSeenState] = useState(state);
   if (state !== seenState) {
     setSeenState(state);
     if (state?.slotGone) setPicked(null);
+    setIntakeErrors(state?.intakeErrors ?? {});
   }
   useEffect(() => {
     if (state?.slotGone) router.refresh();
@@ -84,6 +94,29 @@ export function SlotPicker({
             <Field label="Anything to share? (optional)" htmlFor="note" error={state?.errors?.note}>
               <Textarea id="note" name="note" rows={3} defaultValue={state?.values?.note} placeholder="Topics, exam board, goals…" />
             </Field>
+            {intakeForm && (
+              <fieldset className="space-y-3 border-t border-stone-200 pt-4">
+                <legend className="pt-4 text-sm font-medium">{intakeForm.title || "A few questions"}</legend>
+                {intakeForm.description && <p className="text-xs text-stone-500">{intakeForm.description}</p>}
+                <input type="hidden" name="intake" value={JSON.stringify(intake)} />
+                <div className="slotwise-intake">
+                  <FormFields
+                    form={intakeForm}
+                    values={intake}
+                    errors={intakeErrors}
+                    theme="light"
+                    onChange={(id, value) => {
+                      setIntake((v) => ({ ...v, [id]: value }));
+                      setIntakeErrors((errors) => {
+                        const next = { ...errors };
+                        delete next[id];
+                        return next;
+                      });
+                    }}
+                  />
+                </div>
+              </fieldset>
+            )}
             <Button type="submit" className="w-full" disabled={!picked || pending}>
               {pending ? "Reserving…" : depositLabel ? `Continue to pay ${depositLabel} deposit` : "Confirm booking"}
             </Button>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Booking, Provider, Service } from "@/db/schema";
 import type { BookingContext } from "./booking-context";
-import { cancellationEmails, confirmationEmail, reminderEmail, rescheduleEmails } from "./email-templates";
+import { cancellationEmails, confirmationEmail, providerNewBookingEmail, reminderEmail, rescheduleEmails } from "./email-templates";
 
 const NOW = new Date("2026-10-18T09:00Z");
 const BASE = "https://slotwise.example";
@@ -64,5 +64,28 @@ describe("email templates", () => {
     expect(client.text).toContain("Now: Tue 20 Oct, 8:30 pm");
     expect(client.text).toContain("Was: Mon 19 Oct, 8:30 pm");
     expect(client.attachments?.[0].content).toContain("SEQUENCE:1");
+  });
+
+  it("includes intake answers in the tutor's new-booking email, escaped", () => {
+    const withIntake = {
+      ...ctx,
+      booking: {
+        ...ctx.booking,
+        intake: {
+          formId: "f",
+          version: 1,
+          title: "Student intake",
+          answers: [
+            { id: "year", label: "School year", value: "Year 11" },
+            { id: "consent", label: "Parent consents", value: true },
+            { id: "goals", label: "Goals", value: "<b>pass</b>" },
+          ],
+        },
+      } as Booking,
+    };
+    const email = providerNewBookingEmail(withIntake, BASE);
+    expect(email.text).toContain("Student intake:\nSchool year: Year 11\nParent consents: Yes\nGoals: <b>pass</b>");
+    expect(email.html).toContain("Goals: &lt;b&gt;pass&lt;/b&gt;");
+    expect(providerNewBookingEmail(ctx, BASE).text).not.toContain("intake");
   });
 });

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, expect, it } from "vitest";
 import { bookings, providers, services } from "@/db/schema";
 import { createTestDb, resetTestDb, type TestDb } from "@/test/db";
+import { parseFormSchema } from "@/vendor/formwise/core";
 import { resetDemo } from "./demo";
 
 let db: TestDb;
@@ -32,4 +33,20 @@ it("wipes visitors' changes on reset and is safe to run repeatedly", async () =>
   expect(names).toEqual(["a-level-physics", "gcse-maths", "intro-call"]);
   expect((await db.query.providers.findFirst())?.name).toBe("Alex Morgan");
   expect(await db.select().from(bookings)).toHaveLength(3);
+});
+
+it("gives the Physics service the Formwise intake form, and one sample booking its answers", async () => {
+  await resetDemo(db, "demo@slotwise.dev", NOW);
+  const physics = await db.query.services.findFirst({ where: eq(services.slug, "a-level-physics") });
+  expect(physics!.intakeForm).toMatchObject({ version: 1, fetchedAt: NOW.toISOString(), schema: { title: "Before your first lesson" } });
+  expect(parseFormSchema(physics!.intakeForm!.schema).ok).toBe(true);
+
+  const withIntake = (await db.select().from(bookings)).filter((b) => b.intake);
+  expect(withIntake).toHaveLength(1);
+  expect(withIntake[0]!.serviceId).toBe(physics!.id);
+
+  // A visitor removing the form is undone by the next reset.
+  await db.update(services).set({ intakeForm: null }).where(eq(services.id, physics!.id));
+  await resetDemo(db, "demo@slotwise.dev", NOW);
+  expect((await db.query.services.findFirst({ where: eq(services.slug, "a-level-physics") }))!.intakeForm).not.toBeNull();
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "services" ADD COLUMN "intake_form" jsonb;

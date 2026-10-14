@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { fieldErrors, serviceSchema } from "@/lib/validation";
+import { attachIntakeForm, removeIntakeForm } from "@/server/intake";
 import { createService, removeService, setServiceActive, updateService } from "@/server/services";
 import { requireProvider } from "@/server/session";
 
@@ -46,5 +47,20 @@ export async function deleteService(serviceId: string) {
 export async function setActive(serviceId: string, active: boolean) {
   const provider = await requireProvider();
   await setServiceActive(db, provider.id, serviceId, active);
+  revalidatePath("/dashboard", "layout");
+}
+
+/** Attaches a published Formwise form (or refreshes it to the latest published version). */
+export async function attachIntake(serviceId: string, shareLink: string): Promise<{ ok: boolean; message: string }> {
+  const provider = await requireProvider();
+  const result = await attachIntakeForm(db, provider.id, serviceId, shareLink);
+  revalidatePath("/dashboard", "layout");
+  if (!result.ok) return { ok: false, message: result.error };
+  return { ok: true, message: `Attached “${result.ref.schema.title}” (version ${result.ref.version}).` };
+}
+
+export async function detachIntake(serviceId: string) {
+  const provider = await requireProvider();
+  await removeIntakeForm(db, provider.id, serviceId);
   revalidatePath("/dashboard", "layout");
 }

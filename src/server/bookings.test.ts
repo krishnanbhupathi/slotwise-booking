@@ -56,6 +56,12 @@ describe("placeHold", () => {
     expect(result.booking.blocksUntil).toEqual(new Date("2026-10-19T16:15Z"));
   });
 
+  it("stores the validated intake answers on the booking", async () => {
+    const intake = { formId: "abcdefghjk", version: 2, title: "Intake", answers: [{ id: "year", label: "School year", value: "Year 11" }] };
+    const result = await placeHold(db, request({ intake }));
+    expect(result.ok && result.booking.intake).toEqual(intake);
+  });
+
   it("confirms a free service immediately, with no hold", async () => {
     const result = await placeHold(db, request({ service: free }));
     expect(result.ok && result.booking.status).toBe("confirmed");

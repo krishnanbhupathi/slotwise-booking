@@ -3,6 +3,7 @@ import type { Email } from "@/lib/email";
 import { cityName, formatDateTimeIn, formatTimeIn } from "@/lib/format";
 import { FREE_CHANGE_CUTOFF_HOURS } from "@/lib/policy";
 import { formatMoney } from "@/lib/validation";
+import { formatIntakeValue } from "@/lib/intake";
 import type { BookingContext } from "./booking-context";
 
 // Pure functions: booking context in, email out. No I/O, so they're unit-tested directly.
@@ -83,6 +84,9 @@ export function providerNewBookingEmail(ctx: BookingContext, baseUrl: string): E
     `${booking.clientName} (${booking.clientEmail}) booked ${service.name}.`,
     whenForProvider(ctx),
     ...(booking.note ? [`Note: ${booking.note}`] : []),
+    ...(booking.intake?.answers.length
+      ? [`${booking.intake.title || "Intake answers"}:`, ...booking.intake.answers.map((a) => `${a.label}: ${formatIntakeValue(a.value)}`)]
+      : []),
   ];
   return {
     to: provider.email,

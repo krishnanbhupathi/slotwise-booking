@@ -53,6 +53,7 @@ export default async function ServiceBookingPage({ params, searchParams }: Props
         providerTimeZone={provider.timezone}
         depositLabel={service.depositCents > 0 ? formatMoney(service.depositCents, service.currency) : null}
         timeZones={TIME_ZONES.map((tz) => ({ value: tz, label: timeZoneLabel(tz) }))}
+        intakeForm={service.intakeForm?.schema ?? null}
       />
     </main>
   );
