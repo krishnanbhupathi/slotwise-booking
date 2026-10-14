@@ -146,3 +146,21 @@ export function fieldErrors(error: z.ZodError): Record<string, string> {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Booking (client details)
+// ---------------------------------------------------------------------------
+
+export const bookingDetailsSchema = z.object({
+  startsAt: z.iso.datetime({ offset: true }).transform((v) => new Date(v)),
+  name: z.string().trim().min(1, "Enter your name").max(80),
+  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
+  note: z
+    .string()
+    .trim()
+    .max(500, "Keep it under 500 characters")
+    .transform((v) => v || null),
+  timezone: z
+    .string()
+    .transform((v) => (v && isValidTimeZone(v) ? v : null)),
+});

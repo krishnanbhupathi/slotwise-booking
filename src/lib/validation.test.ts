@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  bookingDetailsSchema,
   dateOverrideSchema,
   fieldErrors,
   formatMoney,
@@ -130,5 +131,28 @@ describe("slugify", () => {
     expect(slugify("GCSE Maths — 1:1 Session!")).toBe("gcse-maths-1-1-session");
     expect(slugify("Café Français")).toBe("cafe-francais");
     expect(slugify("!!!")).toBe("service");
+  });
+});
+
+describe("bookingDetailsSchema", () => {
+  const valid = { startsAt: "2026-10-19T15:00:00.000Z", name: "Sam", email: " Sam@Example.com ", note: "", timezone: "Asia/Kolkata" };
+
+  it("normalises the email, empty note and start time", () => {
+    expect(bookingDetailsSchema.parse(valid)).toEqual({
+      startsAt: new Date("2026-10-19T15:00Z"),
+      name: "Sam",
+      email: "sam@example.com",
+      note: null,
+      timezone: "Asia/Kolkata",
+    });
+  });
+
+  it("drops an unknown time zone rather than failing the booking", () => {
+    expect(bookingDetailsSchema.parse({ ...valid, timezone: "Nowhere/Land" }).timezone).toBeNull();
+  });
+
+  it("rejects a malformed start time or email", () => {
+    expect(bookingDetailsSchema.safeParse({ ...valid, startsAt: "next monday" }).success).toBe(false);
+    expect(bookingDetailsSchema.safeParse({ ...valid, email: "sam" }).success).toBe(false);
   });
 });
