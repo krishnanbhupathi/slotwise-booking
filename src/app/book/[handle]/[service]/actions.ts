@@ -1,12 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { db } from "@/db";
 import { payments } from "@/db/schema";
 import { cityName, formatDateTimeIn } from "@/lib/format";
 import { bookingDetailsSchema, fieldErrors } from "@/lib/validation";
 import { getBaseUrl } from "@/server/base-url";
 import { placeHold, releaseHold } from "@/server/bookings";
+import { notifyConfirmed } from "@/server/notifications";
 import { getPublicProvider, getPublicService } from "@/server/public";
 import { createDepositCheckout, getStripe } from "@/server/stripe";
 
@@ -58,7 +60,10 @@ export async function createBooking(
   }
 
   const booking = hold.booking;
-  if (booking.status === "confirmed") redirect(`/booking/${booking.id}`);
+  if (booking.status === "confirmed") {
+    after(() => notifyConfirmed(db, booking.id));
+    redirect(`/booking/${booking.id}`);
+  }
 
   const stripe = getStripe();
   if (!stripe) {

@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "@/db/schema";
 
@@ -24,3 +25,9 @@ export async function createTestDb() {
 }
 
 export type TestDb = Awaited<ReturnType<typeof createTestDb>>["db"];
+
+/** Empties every table (one database per test file, reset between tests: much faster than re-migrating). */
+export async function resetTestDb(db: TestDb) {
+  // users cascades to providers → services/rules/overrides → bookings → payments/reminders.
+  await db.execute(sql`TRUNCATE users, stripe_events, verification_tokens CASCADE`);
+}

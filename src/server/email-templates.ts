@@ -175,3 +175,19 @@ export function rescheduleEmails(ctx: BookingContext, opts: { previousStart: Dat
     },
   ];
 }
+
+/** Payment arrived after the hold lapsed and someone else had taken the slot. */
+export function latePaymentRefundEmail(ctx: BookingContext, baseUrl: string): Email {
+  const { booking, service, provider } = ctx;
+  const deposit = formatMoney(service.depositCents, service.currency);
+  const text = `Your payment for ${service.name} on ${whenForClient(ctx)} arrived after the 10-minute hold ended, and the time had been booked by someone else. We've refunded your ${deposit} deposit in full; it can take 5–10 days to appear.`;
+  return {
+    to: booking.clientEmail,
+    subject: `Refunded: ${service.name} with ${provider.name}`,
+    text: `Hi ${booking.clientName},\n\n${text}\n\nPick another time: ${baseUrl}/book/${provider.handle}`,
+    html: layout("Your deposit was refunded", [`Hi ${esc(booking.clientName)},`, esc(text)], {
+      label: "Pick another time",
+      url: `${baseUrl}/book/${provider.handle}`,
+    }),
+  };
+}

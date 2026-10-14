@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { bookings, payments, reminders, services, stripeEvents, type Booking } from "@/db/schema";
-import { createTestDb, type TestDb } from "@/test/db";
+import { createTestDb, resetTestDb, type TestDb } from "@/test/db";
 import { makeProvider } from "@/test/fixtures";
 import { handleStripeEvent, type WebhookDeps } from "./stripe-webhook";
 
@@ -14,8 +14,12 @@ let deps: WebhookDeps & { refund: ReturnType<typeof vi.fn> };
 const NOW = new Date("2026-10-18T00:00Z");
 const START = new Date("2026-10-19T15:00Z");
 
-beforeEach(async () => {
+beforeAll(async () => {
   ({ db } = await createTestDb());
+});
+
+beforeEach(async () => {
+  await resetTestDb(db);
   providerId = (await makeProvider(db)).id;
   [{ id: serviceId }] = await db
     .insert(services)

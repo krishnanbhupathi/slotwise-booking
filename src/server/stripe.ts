@@ -60,3 +60,14 @@ export async function createDepositCheckout(
     { idempotencyKey: `checkout-${args.bookingId}` },
   );
 }
+
+/**
+ * Refunds a deposit in full. Idempotent per booking, so retries never refund twice.
+ * Seeded demo bookings carry "pi_demo_" ids with no real payment behind them.
+ */
+export async function refundDeposit(paymentIntentId: string, bookingId: string): Promise<void> {
+  if (paymentIntentId.startsWith("pi_demo_")) return;
+  const stripe = getStripe();
+  if (!stripe) throw new Error("Stripe is not configured; can't refund");
+  await stripe.refunds.create({ payment_intent: paymentIntentId }, { idempotencyKey: `refund-${bookingId}` });
+}

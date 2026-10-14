@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { availabilityRules, bookings, services, type Provider, type Service } from "@/db/schema";
-import { createTestDb, type TestDb } from "@/test/db";
+import { createTestDb, resetTestDb, type TestDb } from "@/test/db";
 import { makeProvider } from "@/test/fixtures";
 import { placeHold, releaseHold, type HoldRequest } from "./bookings";
 
@@ -14,8 +14,12 @@ let free: Service;
 const NOW = new Date("2026-10-18T00:00Z");
 const MONDAY_4PM = new Date("2026-10-19T15:00Z");
 
-beforeEach(async () => {
+beforeAll(async () => {
   ({ db } = await createTestDb());
+});
+
+beforeEach(async () => {
+  await resetTestDb(db);
   provider = await makeProvider(db);
   await db.insert(availabilityRules).values({ providerId: provider.id, weekday: 1, startTime: "16:00", endTime: "20:00" });
   [paid, free] = await db

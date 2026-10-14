@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { availabilityRules, bookings, payments, reminders, services, type Booking, type Provider } from "@/db/schema";
-import { createTestDb, type TestDb } from "@/test/db";
+import { createTestDb, resetTestDb, type TestDb } from "@/test/db";
 import { makeProvider } from "@/test/fixtures";
 import { cancelBooking, rescheduleBooking, type RefundFn } from "./booking-changes";
 
@@ -15,8 +15,12 @@ const START = new Date("2026-10-19T15:00Z");
 const TWO_DAYS_BEFORE = new Date("2026-10-17T15:00Z");
 const TEN_HOURS_BEFORE = new Date("2026-10-19T05:00Z");
 
-beforeEach(async () => {
+beforeAll(async () => {
   ({ db } = await createTestDb());
+});
+
+beforeEach(async () => {
+  await resetTestDb(db);
   provider = await makeProvider(db);
   await db.insert(availabilityRules).values([
     { providerId: provider.id, weekday: 1, startTime: "16:00", endTime: "20:00" },
