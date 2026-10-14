@@ -4,7 +4,14 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 
 ## Status — end of session 3 (Day 3 scope)
 
-**The booking tool is feature-complete in code, tested, and green in CI (unit + e2e). It has never been deployed, and no real Stripe test payment has run:** both are waiting on accounts (see "Blocked on Krishna"). This is the top risk for the week.
+**The booking tool is feature-complete, tested, and green in CI (unit + e2e). Real Stripe (sandbox) payments are now verified locally. It has never been deployed:** this is waiting on Vercel/Neon/Resend (see "Blocked on Krishna"). This is the top risk for the week.
+
+**Stripe sandbox check (15 Oct, local production build + `stripe listen`):**
+- Paid $10 deposit with card 4242 → `checkout.session.completed` → booking confirmed, payment paid, reminder created.
+- `stripe events resend` of the same event → handler logged `duplicate`; still 1 reminder and 1 stored event.
+- Client cancel 2+ days ahead → real Stripe refund (`succeeded`, 1000 usd); booking and payment `refunded`.
+- Left Checkout via the back link → session expired in Stripe, hold `expired`, payment `failed`; `checkout.session.expired` webhook → `released`.
+- Indian sandbox account: Checkout offered INR conversion by default (USD selectable); no address-collection error.
 
 ### Done
 **Day 1:** scaffold, CI, schema plus the exclusion constraint, Auth.js (magic link + demo), onboarding, services, weekly hours, date overrides.
@@ -52,16 +59,18 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 | Day 3 | The booking UUID is the client's access key (no tokens/accounts) | Random v4 UUID, only sent to the client; simplest. Next step: signed, expiring links |
 | Day 3 | Emails best-effort after commit (no outbox) | Time; noted as "what I'd do next" |
 | Day 3 | E2E runs against `next build` + `next start` | Tests what users get; avoids dev-only hydration timing |
+| Day 3 | Stripe sandbox (no business verification) | Stripe India is invite-only for live accounts; test mode needs none |
 
 ### Blocked on Krishna
-- **Stripe test account** (free; no activation needed for test mode): Developers → API keys → `pk_test_…` and `sk_test_…` into `.env.local` and Vercel. `brew install stripe/stripe-cli/stripe && stripe login`. If sign-up is blocked in your country, tell me before choosing a workaround.
+- ~~Stripe test account~~: done (sandbox; India accounts are invite-only for live mode, but test mode works). Keys are in `.env.local`; add the same to Vercel. **Roll the secret key** after the project (it was pasted in chat).
 - Vercel project (import the repo), Neon via Vercel → Storage, Resend API key + verify `bhupathi.dev`.
 - Vercel env: `DATABASE_URL` (pooled), `AUTH_SECRET`, `AUTH_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `DEMO_EMAIL=demo@slotwise.dev`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`.
 - GitHub repo secrets for the cron workflow: `APP_URL`, `CRON_SECRET`.
 - Stripe dashboard webhook → `https://<domain>/api/stripe/webhook` (events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`).
 
 ### Known issues
-- Not deployed; no real Stripe payment exercised end to end (logic is unit-tested with fake events).
+- Not deployed. Stripe verified locally only; the production webhook endpoint still needs creating after deploy.
+- Browser automation (Claude in Chrome) sometimes loses the first click on a freshly loaded page; Playwright (which clicks immediately) passes, so treated as a tooling artefact, not an app bug.
 - Picker copy "the rest is paid to the tutor directly" still needs Krishna's OK.
 - The e2e test "rescheduling isn't offered inside 24 hours" skips itself if the earliest slot happens to be more than 24h away at that time of day.
 - In `next dev`, a click before the page finishes loading can be lost (seen with the demo button); the production build is fine (e2e).
