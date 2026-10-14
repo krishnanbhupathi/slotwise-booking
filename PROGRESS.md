@@ -4,7 +4,19 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 
 ## Status — end of session 3 (Day 3 scope)
 
-**The booking tool is feature-complete, tested, and green in CI (unit + e2e). Real Stripe (sandbox) payments are now verified locally. It has never been deployed:** this is waiting on Vercel/Neon/Resend (see "Blocked on Krishna"). This is the top risk for the week.
+**The booking tool is feature-complete, tested, and green in CI (unit + e2e). Real Stripe (sandbox) payments are verified locally.**
+
+**Deployed (15 Oct): https://slotwise-booking-xi.vercel.app** (`slotwise-booking.vercel.app` belongs to someone else; a custom domain such as `slotwise.bhupathi.dev` is the planned fix).
+- Neon database `slotwise`, in the same Neon project as Formwise (aws-us-east-2); functions pinned to `cle1`.
+- Pushes to `main` deploy; migrations run in the build. Production seeded with the demo account.
+- Smoke-tested on production:
+  - pages return 200;
+  - the demo login reaches the dashboard with the seeded bookings and no page errors;
+  - `/api/cron/*` returns 401 without the secret;
+  - the webhook returns 400 for unsigned events;
+  - the GitHub cron workflow ran against production and returned `{"sent":0,"failed":0,"expiredHolds":0}`.
+- Stripe test-mode webhook endpoint `we_1UQa2OPu6A3W7fflYOFQUc03` points at the live URL, for the three checkout events.
+- **Not yet verified on production:** a real test payment (Krishna to run it; see "Blocked on Krishna"). Emails aren't configured, so magic-link sign-in fails and booking emails error in the logs until Resend is set up. The demo login doesn't need email.
 
 **Stripe sandbox check (15 Oct, local production build + `stripe listen`):**
 - Paid $10 deposit with card 4242 → `checkout.session.completed` → booking confirmed, payment paid, reminder created.
@@ -60,16 +72,22 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 | Day 3 | Emails best-effort after commit (no outbox) | Time; noted as "what I'd do next" |
 | Day 3 | E2E runs against `next build` + `next start` | Tests what users get; avoids dev-only hydration timing |
 | Day 3 | Stripe sandbox (no business verification) | Stripe India is invite-only for live accounts; test mode needs none |
+| 15 Oct | One Neon project (us-east-2) for both apps, one database each; Vercel functions in `cle1` | Krishna's existing Neon project; function and database in the same metro |
+| 15 Oct | Production secrets generated fresh and piped CLI→Vercel | Never shown in chat or committed |
 
 ### Blocked on Krishna
-- ~~Stripe test account~~: done (sandbox; India accounts are invite-only for live mode, but test mode works). Keys are in `.env.local`; add the same to Vercel. **Roll the secret key** after the project (it was pasted in chat).
-- Vercel project (import the repo), Neon via Vercel → Storage, Resend API key + verify `bhupathi.dev`.
-- Vercel env: `DATABASE_URL` (pooled), `AUTH_SECRET`, `AUTH_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `DEMO_EMAIL=demo@slotwise.dev`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`.
-- GitHub repo secrets for the cron workflow: `APP_URL`, `CRON_SECRET`.
-- Stripe dashboard webhook → `https://<domain>/api/stripe/webhook` (events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`).
+- **Test payment on production:** book a paid slot on the live site, then check the booking shows as confirmed in the dashboard.
+- **Resend:**
+  - sign up (Gmail is fine for the account);
+  - verify `bhupathi.dev`;
+  - send from an address on that domain, e.g. `Slotwise <bookings@bhupathi.dev>`.
+  - Then set `RESEND_API_KEY` and `EMAIL_FROM` in Vercel and redeploy.
+- Optional: a custom domain (e.g. `slotwise.bhupathi.dev`). If added, update `AUTH_URL`, the GitHub `APP_URL` secret and the Stripe webhook URL.
+- **Roll the Stripe secret key** after the project (it was pasted in chat).
 
 ### Known issues
-- Not deployed. Stripe verified locally only; the production webhook endpoint still needs creating after deploy.
+- Preview deployments have no database (migrations skipped); production only for now.
+- Email isn't configured in production yet (see above).
 - Browser automation (Claude in Chrome) sometimes loses the first click on a freshly loaded page; Playwright (which clicks immediately) passes, so treated as a tooling artefact, not an app bug.
 - Picker copy "the rest is paid to the tutor directly" still needs Krishna's OK.
 - The e2e test "rescheduling isn't offered inside 24 hours" skips itself if the earliest slot happens to be more than 24h away at that time of day.
