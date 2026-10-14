@@ -111,10 +111,7 @@ export const services = pgTable(
     check("services_duration_positive", sql`${t.durationMin} > 0`),
     check("services_buffer_nonneg", sql`${t.bufferMin} >= 0`),
     check("services_price_nonneg", sql`${t.priceCents} >= 0`),
-    check(
-      "services_deposit_range",
-      sql`${t.depositCents} >= 0 AND ${t.depositCents} <= ${t.priceCents}`,
-    ),
+    check("services_deposit_range", sql`${t.depositCents} >= 0 AND ${t.depositCents} <= ${t.priceCents}`),
   ],
 );
 
@@ -159,13 +156,7 @@ export const dateOverrides = pgTable(
   ],
 );
 
-export const bookingStatus = pgEnum("booking_status", [
-  "held",
-  "confirmed",
-  "cancelled",
-  "refunded",
-  "expired",
-]);
+export const bookingStatus = pgEnum("booking_status", ["held", "confirmed", "cancelled", "refunded", "expired"]);
 
 export const bookings = pgTable(
   "bookings",
@@ -181,6 +172,7 @@ export const bookings = pgTable(
     clientName: text("client_name").notNull(),
     clientEmail: text("client_email").notNull(),
     clientTimezone: text("client_timezone"),
+    note: text("note"),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     /** ends_at + the service buffer. The overlap check runs on [starts_at, blocks_until). */
@@ -201,17 +193,31 @@ export const bookings = pgTable(
 
 export const paymentStatus = pgEnum("payment_status", ["pending", "paid", "refunded", "failed"]);
 
-export const payments = pgTable("payments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  bookingId: uuid("booking_id")
-    .notNull()
-    .references(() => bookings.id, { onDelete: "cascade" }),
-  stripeSessionId: text("stripe_session_id").notNull().unique(),
-  stripePaymentIntentId: text("stripe_payment_intent_id"),
-  amountCents: integer("amount_cents").notNull(),
-  currency: text("currency").notNull(),
-  status: paymentStatus("status").notNull().default("pending"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    stripeSessionId: text("stripe_session_id").notNull().unique(),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull(),
+    status: paymentStatus("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("payments_booking").on(t.bookingId)],
+);
+
+/**
+ * Every Stripe webhook event we have processed. The insert happens in the
+ * same transaction as the event's effects, so a redelivered event is a no-op.
+ */
+export const stripeEvents = pgTable("stripe_events", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const reminders = pgTable(
@@ -224,7 +230,11 @@ export const reminders = pgTable(
     sendAt: timestamp("send_at", { withTimezone: true }).notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
   },
-  (t) => [index("reminders_due").on(t.sendAt).where(sql`${t.sentAt} IS NULL`)],
+  (t) => [
+    index("reminders_due")
+      .on(t.sendAt)
+      .where(sql`${t.sentAt} IS NULL`),
+  ],
 );
 
 export type Provider = typeof providers.$inferSelect;
