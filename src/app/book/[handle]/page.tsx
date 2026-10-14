@@ -1,23 +1,20 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cache } from "react";
 import { Card } from "@/components/ui";
 import { db } from "@/db";
-import { providers, services } from "@/db/schema";
+import { services } from "@/db/schema";
 import { formatMoney } from "@/lib/validation";
-
-const getProvider = cache((handle: string) =>
-  db.query.providers.findFirst({ where: eq(providers.handle, handle.toLowerCase()) }),
-);
+import { getPublicProvider } from "@/server/public";
 
 export async function generateMetadata({ params }: PageProps<"/book/[handle]">): Promise<Metadata> {
-  const provider = await getProvider((await params).handle);
+  const provider = await getPublicProvider((await params).handle);
   return { title: provider ? `Book ${provider.name}` : "Not found" };
 }
 
 export default async function BookingPage({ params }: PageProps<"/book/[handle]">) {
-  const provider = await getProvider((await params).handle);
+  const provider = await getPublicProvider((await params).handle);
   if (!provider) notFound();
 
   const offered = await db
@@ -38,22 +35,27 @@ export default async function BookingPage({ params }: PageProps<"/book/[handle]"
         <ul className="space-y-3">
           {offered.map((service) => (
             <li key={service.id}>
-              <Card className="p-5">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h3 className="font-medium">{service.name}</h3>
-                  <span className="text-sm text-stone-700">{service.priceCents ? formatMoney(service.priceCents, service.currency) : "Free"}</span>
-                </div>
-                <p className="mt-1 text-sm text-stone-600">
-                  {service.durationMin} min
-                  {service.depositCents > 0 && ` · ${formatMoney(service.depositCents, service.currency)} deposit to book`}
-                </p>
-                {service.description && <p className="mt-2 text-sm text-stone-500">{service.description}</p>}
-              </Card>
+              <Link href={`/book/${provider.handle}/${service.slug}`} className="group block">
+                <Card className="p-5 transition-colors group-hover:border-brand-600">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="font-medium">{service.name}</h3>
+                    <span className="text-sm text-stone-700">
+                      {service.priceCents ? formatMoney(service.priceCents, service.currency) : "Free"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-stone-600">
+                    {service.durationMin} min
+                    {service.depositCents > 0 &&
+                      ` · ${formatMoney(service.depositCents, service.currency)} deposit to book`}
+                  </p>
+                  {service.description && <p className="mt-2 text-sm text-stone-500">{service.description}</p>}
+                  <span className="mt-3 inline-block text-sm font-medium text-brand-700">See times →</span>
+                </Card>
+              </Link>
             </li>
           ))}
         </ul>
       )}
-      <p className="mt-8 text-sm text-stone-500">Online booking opens here soon.</p>
     </main>
   );
 }
