@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, lte, or } from "drizzle-orm";
+import { and, eq, gt, inArray, lte, ne, or } from "drizzle-orm";
 import { availabilityRules, bookings, dateOverrides, type Provider, type Service } from "@/db/schema";
 import type { Database } from "@/db/types";
 import { EXCLUSION_VIOLATION, pgErrorCode } from "@/lib/db-errors";
@@ -12,6 +12,8 @@ export async function loadSlotInput(
   provider: Pick<Provider, "id" | "timezone">,
   service: Pick<Service, "durationMin" | "bufferMin">,
   now: Date,
+  /** When rescheduling, the booking being moved mustn't block its own new time. */
+  excludeBookingId?: string,
 ): Promise<SlotInput> {
   const [rules, overrides, live] = await Promise.all([
     db.select().from(availabilityRules).where(eq(availabilityRules.providerId, provider.id)),
@@ -23,6 +25,7 @@ export async function loadSlotInput(
         and(
           eq(bookings.providerId, provider.id),
           gt(bookings.blocksUntil, now),
+          excludeBookingId ? ne(bookings.id, excludeBookingId) : undefined,
           or(
             eq(bookings.status, "confirmed"),
             and(eq(bookings.status, "held"), gt(bookings.holdExpiresAt, now)),

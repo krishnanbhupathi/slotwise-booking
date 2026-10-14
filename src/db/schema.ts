@@ -179,6 +179,10 @@ export const bookings = pgTable(
     blocksUntil: timestamp("blocks_until", { withTimezone: true }).notNull(),
     status: bookingStatus("status").notNull().default("held"),
     holdExpiresAt: timestamp("hold_expires_at", { withTimezone: true }),
+    /** Bumped on every reschedule/cancel so calendar apps replace the earlier .ics event. */
+    icsSequence: integer("ics_sequence").notNull().default(0),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancelledBy: text("cancelled_by", { enum: ["client", "provider"] }),
     /** Answers from the intake form (form builder renderer). */
     intake: jsonb("intake"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
