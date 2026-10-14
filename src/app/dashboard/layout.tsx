@@ -11,13 +11,19 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
   return (
     <div className="flex flex-1 flex-col">
       {isDemo && (
-        <p className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">
+        <p className="hatched border-b-2 border-stone-900 bg-amber-100 px-4 py-2 text-center text-sm font-bold text-amber-950">
           You&apos;re in the shared demo account. Changes are visible to other visitors.
         </p>
       )}
-      <header className="border-b border-stone-200 bg-white">
+      <header className="border-b-2 border-stone-900 bg-white">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link href="/dashboard" className="font-semibold tracking-tight">
+          <Link href="/dashboard" className="flex items-center gap-2 font-display text-lg font-black tracking-tight">
+            <span aria-hidden="true" className="grid grid-cols-2 gap-0.5">
+              <span className="subject-0 lesson size-2 rounded-[2px]" />
+              <span className="subject-1 lesson size-2 rounded-[2px]" />
+              <span className="subject-2 lesson size-2 rounded-[2px]" />
+              <span className="hatched size-2 rounded-[2px] border border-stone-300" />
+            </span>
             Slotwise
           </Link>
           <DashboardNav />
@@ -25,7 +31,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
             <Link
               href={`/book/${provider.handle}`}
               target="_blank"
-              className="text-sm font-medium text-brand-700 hover:underline"
+              className="font-display text-sm font-bold text-stone-900 hover:underline"
             >
               View booking page ↗
             </Link>

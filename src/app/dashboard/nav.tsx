@@ -23,8 +23,8 @@ export function DashboardNav() {
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cx(
-              "rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap",
-              active ? "bg-stone-200/70 text-stone-900" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
+              "rounded-md px-3 py-1.5 font-display text-sm font-bold whitespace-nowrap",
+              active ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
             )}
           >
             {link.label}

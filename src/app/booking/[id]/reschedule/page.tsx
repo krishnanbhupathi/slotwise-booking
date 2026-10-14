@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { cityName, formatDateTimeIn } from "@/lib/format";
 import { canClientReschedule, FREE_CHANGE_CUTOFF_HOURS } from "@/lib/policy";
 import { generateSlots } from "@/lib/slots";
+import { loadSubjectIndex } from "@/server/subjects";
 import { TIME_ZONES, timeZoneLabel } from "@/lib/timezones";
 import { loadBookingContext } from "@/server/booking-context";
 import { loadSlotInput } from "@/server/bookings";
@@ -42,14 +43,15 @@ export default async function ReschedulePage({ params }: PageProps<"/booking/[id
     );
   }
 
+  const subject = (await loadSubjectIndex(db, provider.id)).get(service.id) ?? 0;
   const slots = generateSlots(await loadSlotInput(db, provider, service, now, booking.id))
     .filter((s) => s.start.getTime() !== booking.startsAt.getTime())
     .map((s) => s.start.toISOString());
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       {back}
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight">Reschedule {service.name}</h1>
+      <h1 className="mt-2 font-display text-3xl font-black tracking-tight">Reschedule {service.name}</h1>
       <p className="mt-1 text-sm text-stone-600">
         Currently {formatDateTimeIn(booking.startsAt, zone)} ({cityName(zone)} time). Your deposit carries over.
       </p>
@@ -59,6 +61,7 @@ export default async function ReschedulePage({ params }: PageProps<"/booking/[id
         providerName={provider.name}
         providerTimeZone={provider.timezone}
         timeZones={TIME_ZONES.map((tz) => ({ value: tz, label: timeZoneLabel(tz) }))}
+        subject={subject}
       />
     </main>
   );

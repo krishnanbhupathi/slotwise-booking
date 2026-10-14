@@ -45,11 +45,13 @@ export async function resetDemo(db: Database, email: string, now: Date) {
       .where(and(eq(services.providerId, provider.id), notInArray(services.slug, DEMO_SERVICES.map((s) => s.slug))));
 
     const rows = [];
-    for (const s of DEMO_SERVICES) {
+    for (const [i, s] of DEMO_SERVICES.entries()) {
+      // Distinct creation times keep the subject colours in list order (Maths blue, Physics orange, intro green).
+      const createdAt = new Date(now.getTime() - (DEMO_SERVICES.length - i) * 1000);
       const [row] = await tx
         .insert(services)
-        .values({ providerId: provider.id, ...s })
-        .onConflictDoUpdate({ target: [services.providerId, services.slug], set: { ...s, active: true, intakeForm: null } })
+        .values({ providerId: provider.id, ...s, createdAt })
+        .onConflictDoUpdate({ target: [services.providerId, services.slug], set: { ...s, createdAt, active: true, intakeForm: null } })
         .returning();
       rows.push(row);
     }

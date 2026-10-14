@@ -2,6 +2,7 @@ import { buildIcs } from "@/lib/ics";
 import type { Email } from "@/lib/email";
 import { cityName, formatDateTimeIn, formatTimeIn } from "@/lib/format";
 import { FREE_CHANGE_CUTOFF_HOURS } from "@/lib/policy";
+import { SUBJECT_HEX } from "@/lib/subjects";
 import { formatMoney } from "@/lib/validation";
 import { formatIntakeValue } from "@/lib/intake";
 import type { BookingContext } from "./booking-context";
@@ -11,12 +12,17 @@ import type { BookingContext } from "./booking-context";
 const esc = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+/** The Slotwise mark in email: three subject colours and a closed (grey) day, like a timetable row. */
+const STRIP = `<p style="margin:0 0 20px;font-size:0;line-height:0">${[...SUBJECT_HEX.slice(0, 3), "#d2ccbd"]
+  .map((c) => `<span style="display:inline-block;width:28px;height:6px;margin-right:3px;border-radius:3px;background:${c}"></span>`)
+  .join("")}</p>`;
+
 function layout(heading: string, paragraphs: string[], action?: { label: string; url: string }) {
   const body = paragraphs.map((p) => `<p style="margin:0 0 12px">${p}</p>`).join("");
   const button = action
-    ? `<p style="margin:20px 0"><a href="${action.url}" style="background:#0f6b5c;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;display:inline-block">${esc(action.label)}</a></p>`
+    ? `<p style="margin:20px 0"><a href="${action.url}" style="background:#1b1530;color:#fff;padding:11px 18px;border-radius:10px;font-weight:700;text-decoration:none;display:inline-block">${esc(action.label)}</a></p>`
     : "";
-  return `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1c1917;line-height:1.5;max-width:520px;margin:0 auto;padding:24px"><h1 style="font-size:20px;margin:0 0 16px">${esc(heading)}</h1>${body}${button}<p style="margin-top:32px;font-size:12px;color:#78716c">Sent by Slotwise</p></body></html>`;
+  return `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1b1530;line-height:1.5;max-width:520px;margin:0 auto;padding:24px">${STRIP}<h1 style="font-size:22px;font-weight:900;margin:0 0 16px">${esc(heading)}</h1>${body}${button}<p style="margin-top:32px;font-size:12px;color:#67617d">Sent by Slotwise</p></body></html>`;
 }
 
 /** The client's local time plus the provider's, e.g. "Mon 19 Oct, 9:30 pm (Kolkata time) — 5:00 pm for Alex". */

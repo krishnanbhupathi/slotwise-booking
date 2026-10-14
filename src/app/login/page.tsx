@@ -16,11 +16,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { error } = await searchParams;
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-16">
-      <Link href="/" className="mb-8 text-lg font-semibold tracking-tight">
+      <Link href="/" className="mb-8 font-display text-xl font-black tracking-tight">
         Slotwise
       </Link>
       <Card className="p-6">
-        <h1 className="text-xl font-semibold">Sign in or create an account</h1>
+        <h1 className="font-display text-2xl font-black tracking-tight">Sign in or create an account</h1>
         <p className="mt-1 mb-6 text-sm text-stone-600">No password. We&apos;ll email you a link.</p>
         {error && (
           <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">

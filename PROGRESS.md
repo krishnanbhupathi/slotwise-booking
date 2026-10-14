@@ -113,3 +113,5 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 - In `next dev`, a click before the page finishes loading can be lost (seen with the demo button); the production build is fine (e2e).
 - No rate limit on holds; no email outbox/retry; a provider can't change their time zone after onboarding.
 - Auth.js v5 is a beta release (pinned to `5.0.0-beta.32`).
+
+**Day 7 restyle (15 Oct):** Visual identity changed to a school timetable (Krishna chose option C from three mockups): week grid booking page (days across, times down, closed days hatched; one day at a time on phones), one colour per subject assigned by service creation order (`lib/subjects.ts`), Gabarito for headings/times/prices and Lexend for text (Atkinson Hyperlegible was planned, but its slashed zero made prices read as "$1θ.θθ"). A combined multi-subject week was out of MVP scope: each service still has its own timetable. Taken slots aren't shown (the server only sends open times).

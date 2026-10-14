@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { pickSlot } from "./slots";
 
 // The demo's Physics service has a Formwise intake form (see src/server/demo-intake.ts).
 
@@ -8,7 +9,7 @@ test("intake questions are validated on the server before any hold or payment", 
   await expect(intake.getByLabel(/School year/)).toBeVisible();
   await expect(intake.getByLabel(/Exam board/)).toHaveCount(0);
 
-  await page.getByRole("tabpanel", { name: "Times" }).getByRole("button").first().click();
+  await pickSlot(page);
   await page.getByLabel("Name").fill("Intake Student");
   await page.getByLabel("Email").fill("intake@example.com");
 

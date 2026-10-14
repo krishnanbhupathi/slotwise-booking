@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { pickSlot, slotButton } from "./slots";
 
 // Viewer zone is Asia/Kolkata (see playwright.config.ts); the demo tutor is in London.
 
@@ -11,9 +12,8 @@ test("a student books the free intro call, reschedules it, then cancels it", asy
   // Times are shown in the viewer's zone, with the tutor's zone noted.
   await expect(page.getByText("Alex Morgan is in London; times are converted for you.")).toBeVisible();
 
-  // A date at least two days out, so the 24h free-change window is still open.
-  await page.getByRole("tab").nth(2).click();
-  await page.getByRole("tabpanel", { name: "Times" }).getByRole("button").first().click();
+  // A time at least two days out, so the 24h free-change window is still open.
+  const booked = await pickSlot(page, new Date(Date.now() + 48 * 3_600_000));
   await page.getByLabel("Name").fill("Playwright Student");
   await page.getByLabel("Email").fill("e2e.student@example.com");
   await page.getByRole("button", { name: "Confirm booking" }).click();
@@ -23,8 +23,7 @@ test("a student books the free intro call, reschedules it, then cancels it", asy
 
   // Reschedule to another day.
   await page.getByRole("link", { name: "Reschedule" }).click();
-  await page.getByRole("tab").nth(3).click();
-  await page.getByRole("tabpanel", { name: "Times" }).getByRole("button").first().click();
+  await pickSlot(page, new Date(Date.parse(booked) + 24 * 3_600_000));
   await page.getByRole("button", { name: "Move my booking" }).click();
   await expect(page.getByText("Rescheduled. We've emailed you an updated calendar invite.")).toBeVisible();
 
@@ -38,7 +37,7 @@ test("a student books the free intro call, reschedules it, then cancels it", asy
 test("rescheduling isn't offered inside 24 hours, but cancelling is", async ({ page }) => {
   await page.goto("/book/demo-tutor/intro-call");
   // The earliest offered time is within a day (12h notice, evening hours).
-  await page.getByRole("tabpanel", { name: "Times" }).getByRole("button").first().click();
+  await pickSlot(page);
   await page.getByLabel("Name").fill("Soon Student");
   await page.getByLabel("Email").fill("soon@example.com");
   await page.getByRole("button", { name: "Confirm booking" }).click();
@@ -51,28 +50,25 @@ test("rescheduling isn't offered inside 24 hours, but cancelling is", async ({ p
 
 test("a booked time disappears for the next student", async ({ page }) => {
   await page.goto("/book/demo-tutor/intro-call");
-  const firstTime = page.getByRole("tabpanel", { name: "Times" }).getByRole("button").first();
-  const label = await firstTime.innerText();
-  await firstTime.click();
+  const iso = await pickSlot(page);
   await page.getByLabel("Name").fill("First Student");
   await page.getByLabel("Email").fill("first@example.com");
   await page.getByRole("button", { name: "Confirm booking" }).click();
   await expect(page.getByRole("heading", { name: "You're booked" })).toBeVisible();
 
   await page.goto("/book/demo-tutor/intro-call");
-  await expect(page.getByRole("tabpanel", { name: "Times" }).getByRole("button", { name: label, exact: true })).toHaveCount(0);
+  await expect(page.locator("button[data-start]:visible").first()).toBeVisible();
+  await expect(slotButton(page, iso)).toHaveCount(0);
 });
 
 test("without Stripe configured, a paid booking fails safely and keeps the time free", async ({ page }) => {
   await page.goto("/book/demo-tutor/gcse-maths");
-  const firstTime = page.getByRole("tabpanel", { name: "Times" }).getByRole("button").first();
-  const label = await firstTime.innerText();
-  await firstTime.click();
+  const iso = await pickSlot(page);
   await page.getByLabel("Name").fill("Paying Student");
   await page.getByLabel("Email").fill("payer@example.com");
   await page.getByRole("button", { name: /Continue to pay/ }).click();
   await expect(page.getByText("Online payment isn't set up yet")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("tabpanel", { name: "Times" }).getByRole("button", { name: label, exact: true })).toBeVisible();
+  await expect(slotButton(page, iso)).toBeVisible();
 });

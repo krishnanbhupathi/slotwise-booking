@@ -5,6 +5,7 @@ import { Button, Card } from "@/components/ui";
 import type { IntakeAnswers } from "@/db/schema";
 import { cityName, formatDayIn, formatTimeIn } from "@/lib/format";
 import { formatIntakeValue } from "@/lib/intake";
+import { subjectClass } from "@/lib/subjects";
 import { formatMoney } from "@/lib/validation";
 import { cancelAsProvider } from "./booking-actions";
 
@@ -17,12 +18,13 @@ export type UpcomingBooking = {
   clientTimezone: string | null;
   note: string | null;
   intake: IntakeAnswers | null;
+  serviceId: string;
   serviceName: string;
   depositCents: number | null;
   currency: string | null;
 };
 
-export function UpcomingBookings({ bookings, timeZone }: { bookings: UpcomingBooking[]; timeZone: string }) {
+export function UpcomingBookings({ bookings, timeZone, subjects }: { bookings: UpcomingBooking[]; timeZone: string; subjects: Record<string, number> }) {
   if (bookings.length === 0) {
     return <Card className="p-6 text-sm text-stone-600">No upcoming bookings yet. Share your booking page to get some.</Card>;
   }
@@ -38,10 +40,10 @@ export function UpcomingBookings({ bookings, timeZone }: { bookings: UpcomingBoo
     <div className="space-y-6">
       {[...groups].map(([day, rows]) => (
         <section key={day} aria-label={day}>
-          <h3 className="mb-2 text-sm font-medium text-stone-500">{day}</h3>
+          <h3 className="mb-2 font-display text-sm font-bold text-stone-600">{day}</h3>
           <Card className="divide-y divide-stone-100">
             {rows.map((b) => (
-              <BookingRow key={b.id} booking={b} timeZone={timeZone} />
+              <BookingRow key={b.id} booking={b} timeZone={timeZone} subject={subjects[b.serviceId] ?? 0} />
             ))}
           </Card>
         </section>
@@ -50,16 +52,16 @@ export function UpcomingBookings({ bookings, timeZone }: { bookings: UpcomingBoo
   );
 }
 
-function BookingRow({ booking: b, timeZone }: { booking: UpcomingBooking; timeZone: string }) {
+function BookingRow({ booking: b, timeZone, subject }: { booking: UpcomingBooking; timeZone: string; subject: number }) {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const start = new Date(b.startsAt);
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 px-5 py-4">
+    <div className={`${subjectClass(subject)} flex flex-wrap items-start justify-between gap-4 py-4 pr-5 pl-6 shadow-[inset_6px_0_0_var(--subject)]`}>
       <div className="min-w-0">
-        <p className="font-medium">
+        <p className="font-display font-bold">
           {formatTimeIn(start, timeZone)}–{formatTimeIn(new Date(b.endsAt), timeZone)} · {b.clientName}
         </p>
         <p className="text-sm text-stone-600">

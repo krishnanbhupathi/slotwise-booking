@@ -7,16 +7,18 @@ import { availabilityRules, services } from "@/db/schema";
 import { timeZoneLabel } from "@/lib/timezones";
 import { listUpcomingBookings } from "@/server/dashboard";
 import { requireProvider } from "@/server/session";
+import { loadSubjectIndex } from "@/server/subjects";
 import { UpcomingBookings } from "./upcoming-bookings";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const provider = await requireProvider();
-  const [[serviceCount], [ruleCount], upcoming] = await Promise.all([
+  const [[serviceCount], [ruleCount], upcoming, subjects] = await Promise.all([
     db.select({ n: count() }).from(services).where(eq(services.providerId, provider.id)),
     db.select({ n: count() }).from(availabilityRules).where(eq(availabilityRules.providerId, provider.id)),
     listUpcomingBookings(db, provider.id, new Date()),
+    loadSubjectIndex(db, provider.id),
   ]);
 
   const steps = [
@@ -33,7 +35,7 @@ export default async function DashboardPage() {
       />
       {steps.some((s) => !s.done) && (
         <Card className="mb-8 p-6">
-          <h2 className="font-medium">Get ready to take bookings</h2>
+          <h2 className="font-display text-lg font-bold">Get ready to take bookings</h2>
           <ol className="mt-4 space-y-3">
             {steps.map((step, i) => (
               <li key={step.label} className="flex items-center gap-3 text-sm">
@@ -56,9 +58,10 @@ export default async function DashboardPage() {
           </ol>
         </Card>
       )}
-      <h2 className="mb-3 font-medium">Upcoming bookings</h2>
+      <h2 className="mb-3 font-display text-xl font-bold">Upcoming bookings</h2>
       <UpcomingBookings
         timeZone={provider.timezone}
+        subjects={Object.fromEntries(subjects)}
         bookings={upcoming.map((b) => ({ ...b, startsAt: b.startsAt.toISOString(), endsAt: b.endsAt.toISOString() }))}
       />
     </>

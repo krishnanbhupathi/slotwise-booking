@@ -48,7 +48,7 @@ function ServiceRow({ service }: { service: Service }) {
     <Card className={service.active ? "p-5" : "bg-stone-50 p-5"}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="font-medium">
+          <h2 className="font-display text-lg font-bold">
             {service.name}
             {!service.active && (
               <span className="ml-2 rounded bg-stone-200 px-1.5 py-0.5 text-xs font-normal text-stone-600">Archived</span>

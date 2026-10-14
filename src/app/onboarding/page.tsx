@@ -20,7 +20,7 @@ export default async function OnboardingPage() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-16">
       <Card className="p-6">
-        <h1 className="text-xl font-semibold">Set up your booking page</h1>
+        <h1 className="font-display text-2xl font-black tracking-tight">Set up your booking page</h1>
         <p className="mt-1 mb-6 text-sm text-stone-600">You can add services and hours next.</p>
         <OnboardingForm
           suggestedHandle={slugify(local).slice(0, 32)}

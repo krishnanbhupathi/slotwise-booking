@@ -10,7 +10,7 @@ import { requireProvider } from "@/server/session";
 export const metadata: Metadata = { title: "Payments" };
 
 const STATUS_STYLES = {
-  paid: "bg-brand-50 text-brand-800",
+  paid: "bg-[#ddf5ec] text-[#0b5a43]",
   refunded: "bg-stone-100 text-stone-700",
   pending: "bg-amber-50 text-amber-900",
   failed: "bg-stone-100 text-stone-500",

@@ -7,7 +7,9 @@ import { db } from "@/db";
 import { bookings, providers, services } from "@/db/schema";
 import { cityName, formatDateTimeIn, formatTimeIn } from "@/lib/format";
 import { canClientReschedule, clientCancelTerms, FREE_CHANGE_CUTOFF_HOURS } from "@/lib/policy";
+import { subjectClass } from "@/lib/subjects";
 import { formatMoney } from "@/lib/validation";
+import { loadSubjectIndex } from "@/server/subjects";
 import { ManageBooking } from "./manage-booking";
 import { RefreshWhilePending } from "./refresh-while-pending";
 
@@ -29,6 +31,7 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
   if (!row) notFound();
 
   const { booking, service, provider } = row;
+  const subject = (await loadSubjectIndex(db, provider.id)).get(service.id) ?? 0;
   const zone = booking.clientTimezone ?? provider.timezone;
   const waitingForPayment = booking.status === "held" && paid === "1";
   const now = new Date();
@@ -51,21 +54,25 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
   return (
     <main className="mx-auto w-full max-w-lg flex-1 px-4 py-16">
       {waitingForPayment && <RefreshWhilePending />}
-      <Card className="p-6">
-        <p className="text-sm text-stone-500">{provider.name}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight" aria-live="polite">
-          {headline}
-        </h1>
-
-        <dl className="mt-6 space-y-3 text-sm">
+      <Card className="overflow-hidden">
+        <div className={`${subjectClass(subject)} lesson px-6 py-5`}>
+          <p className="font-display text-xs font-bold tracking-wider uppercase">
+            {provider.name} · {service.name}
+          </p>
+          <h1 className="mt-1 font-display text-3xl font-black tracking-tight text-stone-900" aria-live="polite">
+            {headline}
+          </h1>
+        </div>
+        <div className="p-6">
+        <dl className="space-y-3 text-sm">
           <div>
-            <dt className="text-stone-500">Session</dt>
+            <dt className="font-display text-xs font-bold tracking-wider text-stone-600 uppercase">Session</dt>
             <dd className="font-medium">
               {service.name} · {service.durationMin} min
             </dd>
           </div>
           <div>
-            <dt className="text-stone-500">When</dt>
+            <dt className="font-display text-xs font-bold tracking-wider text-stone-600 uppercase">When</dt>
             <dd className="font-medium">
               {formatDateTimeIn(booking.startsAt, zone)} ({cityName(zone)} time)
               {zone !== provider.timezone && (
@@ -77,7 +84,7 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
           </div>
           {service.depositCents > 0 && booking.status === "confirmed" && (
             <div>
-              <dt className="text-stone-500">Paid</dt>
+              <dt className="font-display text-xs font-bold tracking-wider text-stone-600 uppercase">Paid</dt>
               <dd className="font-medium">
                 {formatMoney(service.depositCents, service.currency)} deposit
                 {service.priceCents > service.depositCents &&
@@ -88,7 +95,7 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
         </dl>
 
         {rescheduled === "1" && booking.status === "confirmed" && (
-          <p role="status" className="mt-4 rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-800">
+          <p role="status" className="mt-4 rounded-md border-2 border-stone-900 bg-white px-3 py-2 text-sm font-bold">
             Rescheduled. We&apos;ve emailed you an updated calendar invite.
           </p>
         )}
@@ -119,11 +126,12 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
         {booking.status !== "confirmed" && booking.status !== "held" && (
           <Link
             href={`/book/${provider.handle}/${service.slug}`}
-            className="mt-6 inline-block text-sm font-medium text-brand-700 hover:underline"
+            className="mt-6 inline-block font-display text-sm font-bold text-stone-900 hover:underline"
           >
             Choose another time →
           </Link>
         )}
+        </div>
       </Card>
     </main>
   );

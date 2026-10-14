@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Gabarito, Lexend } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+/** Headings, times and prices. */
+const gabarito = Gabarito({ variable: "--font-gabarito", subsets: ["latin"], weight: ["500", "700", "900"] });
+/** Body text: designed for easier reading, with plain (unslashed) zeros for prices. */
+const lexend = Lexend({ variable: "--font-lexend", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: "Slotwise", template: "%s · Slotwise" },
@@ -21,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${gabarito.variable} ${lexend.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

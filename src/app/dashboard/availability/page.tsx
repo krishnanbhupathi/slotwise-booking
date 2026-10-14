@@ -29,14 +29,14 @@ export default async function AvailabilityPage() {
         description={`Hours are in your time zone, ${timeZoneLabel(provider.timezone)}. Clients see them converted to theirs.`}
       />
       <section aria-labelledby="weekly-heading" className="space-y-3">
-        <h2 id="weekly-heading" className="font-medium">
+        <h2 id="weekly-heading" className="font-display text-lg font-bold">
           Weekly hours
         </h2>
         <WeeklyHours initial={week} />
       </section>
       <section aria-labelledby="dates-heading" className="mt-10 space-y-3">
         <div>
-          <h2 id="dates-heading" className="font-medium">
+          <h2 id="dates-heading" className="font-display text-lg font-bold">
             Date changes
           </h2>
           <p className="text-sm text-stone-600">Days off or different hours on a specific date. These replace your weekly hours for that day.</p>

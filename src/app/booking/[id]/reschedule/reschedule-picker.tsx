@@ -12,12 +12,14 @@ export function ReschedulePicker({
   providerName,
   providerTimeZone,
   timeZones,
+  subject,
 }: {
   bookingId: string;
   slots: string[];
   providerName: string;
   providerTimeZone: string;
   timeZones: ZoneOption[];
+  subject: number;
 }) {
   const { zone, setZone, zoneOptions } = useViewerZone(timeZones);
   const [picked, setPicked] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export function ReschedulePicker({
   const pickedStart = picked ? new Date(picked) : null;
 
   return (
-    <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_22rem]">
+    <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <SlotGrid
         slots={slots}
         zone={zone}
@@ -37,9 +39,10 @@ export function ReschedulePicker({
         onPick={setPicked}
         providerName={providerName}
         providerTimeZone={providerTimeZone}
+        subject={subject}
       />
       <Card className="h-fit p-5">
-        <h2 className="font-medium">New time</h2>
+        <h2 className="font-display text-lg font-bold">New time</h2>
         <p className="mt-1 text-sm text-stone-700">
           {pickedStart ? formatDateTimeIn(pickedStart, zone) : <span className="text-stone-500">Pick a time first.</span>}
           {pickedStart && zone !== providerTimeZone && (
