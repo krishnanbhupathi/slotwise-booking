@@ -1,4 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "cle1"
+  ],
   "buildCommand": "npm run db:migrate && npm run build"
 }
