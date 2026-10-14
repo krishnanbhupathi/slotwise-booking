@@ -7,8 +7,8 @@
     "accessibility": 100,
     "bestPractices": 100,
     "seo": 100,
-    "lcpMs": 1826.5545,
-    "tbtMs": 38,
+    "lcpMs": 1672.9735,
+    "tbtMs": 24,
     "cls": 0
   },
   {
@@ -19,7 +19,7 @@
     "accessibility": 100,
     "bestPractices": 100,
     "seo": 100,
-    "lcpMs": 445.158,
+    "lcpMs": 345.751,
     "tbtMs": 0,
     "cls": 0
   },
@@ -31,8 +31,8 @@
     "accessibility": 100,
     "bestPractices": 100,
     "seo": 100,
-    "lcpMs": 1922.6455,
-    "tbtMs": 36.00000000000023,
+    "lcpMs": 1899.9189999999999,
+    "tbtMs": 18,
     "cls": 0
   },
   {
@@ -43,7 +43,7 @@
     "accessibility": 100,
     "bestPractices": 100,
     "seo": 100,
-    "lcpMs": 433.89750000000004,
+    "lcpMs": 449.3575,
     "tbtMs": 0,
     "cls": 0
   },
@@ -52,11 +52,11 @@
     "url": "https://slotwise-booking-xi.vercel.app/book/demo-tutor/a-level-physics",
     "form": "mobile",
     "performance": 98,
-    "accessibility": 92,
+    "accessibility": 100,
     "bestPractices": 100,
     "seo": 100,
-    "lcpMs": 2273.801,
-    "tbtMs": 20,
+    "lcpMs": 2273.648,
+    "tbtMs": 40,
     "cls": 0
   },
   {
@@ -64,10 +64,10 @@
     "url": "https://slotwise-booking-xi.vercel.app/book/demo-tutor/a-level-physics",
     "form": "desktop",
     "performance": 100,
-    "accessibility": 92,
+    "accessibility": 100,
     "bestPractices": 100,
     "seo": 100,
-    "lcpMs": 464.37800000000004,
+    "lcpMs": 464.507,
     "tbtMs": 0,
     "cls": 0
   }
