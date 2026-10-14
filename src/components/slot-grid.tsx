@@ -101,35 +101,37 @@ export function SlotGrid({
             >
               <span className="font-medium">{weekday}</span>
               <span>{rest.join(" ")}</span>
-              <span className="mt-0.5 text-xs text-stone-500">{starts.length} times</span>
+              <span className={cx("mt-0.5 text-xs", selected ? "text-stone-700" : "text-stone-500")}>{starts.length} times</span>
             </button>
           );
         })}
       </div>
 
-      <ul role="tabpanel" aria-label="Times" className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {times.map((start) => {
-          const iso = start.toISOString();
-          const selected = iso === picked;
-          return (
-            <li key={iso}>
-              <button
-                type="button"
-                aria-pressed={selected}
-                onClick={() => onPick(iso)}
-                className={cx(
-                  "w-full rounded-md border px-2 py-2 text-sm font-medium",
-                  selected
-                    ? "border-brand-700 bg-brand-700 text-white"
-                    : "border-stone-200 bg-white text-stone-800 hover:border-brand-600",
-                )}
-              >
-                {formatTimeIn(start, zone)}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div role="tabpanel" aria-label="Times">
+        <ul className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {times.map((start) => {
+            const iso = start.toISOString();
+            const selected = iso === picked;
+            return (
+              <li key={iso}>
+                <button
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onPick(iso)}
+                  className={cx(
+                    "w-full rounded-md border px-2 py-2 text-sm font-medium",
+                    selected
+                      ? "border-brand-700 bg-brand-700 text-white"
+                      : "border-stone-200 bg-white text-stone-800 hover:border-brand-600",
+                  )}
+                >
+                  {formatTimeIn(start, zone)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
       {zone !== providerTimeZone && (
         <p className="mt-3 text-xs text-stone-500">
           {providerName} is in {cityName(providerTimeZone)}; times are converted for you.
