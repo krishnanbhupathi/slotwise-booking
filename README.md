@@ -48,6 +48,31 @@ The look is a **school timetable**, the week grid students already know.
 
 Next.js 16 (App Router, Server Actions) · TypeScript · Postgres (Neon) with Drizzle ORM · Auth.js v5 · Stripe Checkout · Resend · Tailwind CSS · Vitest + PGlite · Vercel.
 
+## Architecture
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor S as Student
+  participant A as Next.js on Vercel<br/>pages + server actions
+  participant DB as Postgres (Neon)
+  participant ST as Stripe Checkout<br/>(test mode)
+  participant R as Resend
+  S->>A: pick a time, answer intake form
+  A->>A: re-run slot engine, validate answers
+  A->>DB: insert hold (10 min)
+  Note over DB: exclusion constraint rejects<br/>any overlapping booking
+  A->>ST: create Checkout session (idempotency key)
+  A-->>S: redirect to Stripe
+  S->>ST: pay deposit
+  ST->>A: webhook checkout.session.completed
+  A->>DB: one transaction: record event id + confirm booking
+  A-)R: after commit: confirmation email + .ics
+  Note over A,DB: GitHub Actions calls /api/cron hourly:<br/>reminders, expire lapsed holds (daily: reset demo)
+```
+
+One Next.js app on Vercel serves the booking pages, the tutor dashboard (Auth.js), the Stripe webhook and the cron endpoints, all against one Postgres database. A booking is a **held** row first, and Postgres has the last word on overlaps. The webhook confirms it in the same transaction that records the event id, and email goes out only after that commit. The intake form is a copy the tutor pulls from Formwise's public API, so booking never calls Formwise.
+
 ## Run it locally
 
 You need Node 20.9+ and a Postgres database (a free Neon project or a local Postgres).
