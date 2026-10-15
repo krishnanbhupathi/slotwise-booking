@@ -111,7 +111,7 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 
 ### Blocked on Krishna
 - Optional: a custom domain (e.g. `slotwise.bhupathi.dev`). If added, update `AUTH_URL`, the GitHub `APP_URL` secret and the Stripe webhook URL.
-- **Roll the Stripe secret key** after the project (it was pasted in chat).
+- ~~Roll the Stripe secret key~~ Done 15 Oct: Krishna rotated it (old key expired); Vercel production and `.env.local` updated, live Checkout verified.
 
 ### Known issues
 - Preview deployments have no database (migrations skipped); production only for now.
