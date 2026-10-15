@@ -130,5 +130,6 @@ Scheduled jobs: set a random `CRON_SECRET` on Vercel, and add GitHub repository 
 ## Known limitations
 - Taken times aren't shown on the timetable; the server only sends open times, so a taken slot simply isn't there.
 - A failed email isn't retried (no outbox table yet).
+- Emails come from a new sending domain (`mail.bhupathi.dev`, DKIM and SPF set up), so Gmail may file the first sign-in link in Spam until the domain builds a reputation. **Try the demo** doesn't need email.
 - Intake conditions only support "equals one value" (a Formwise limitation).
 - Sessions can't be revoked server-side before they expire (JWT cookies).
