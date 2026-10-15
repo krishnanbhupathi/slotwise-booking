@@ -107,6 +107,7 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 | Day 6 | Renderer vendored, not installed from npm | Krishna; sync script keeps it identical to Formwise |
 | Day 6 | Intake answers validated in the server action before the hold | Invalid answers never create holds or Stripe sessions |
 | 15 Oct | Send from the subdomain `mail.bhupathi.dev` | Krishna; keeps sending reputation and DNS separate from the portfolio domain |
+| 15 Oct | Booking-page copy "The rest is paid to {tutor} directly" | Krishna approved |
 
 ### Blocked on Krishna
 - Optional: a custom domain (e.g. `slotwise.bhupathi.dev`). If added, update `AUTH_URL`, the GitHub `APP_URL` secret and the Stripe webhook URL.
@@ -117,7 +118,6 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 - An attached intake form is a copy: changes published in Formwise appear only after the tutor clicks Refresh (by design, so bookings don't depend on Formwise being up).
 - Intake conditions only support "equals one value" (a Formwise limitation).
 - Browser automation (Claude in Chrome) sometimes loses the first click on a freshly loaded page; Playwright (which clicks immediately) passes, so treated as a tooling artefact, not an app bug.
-- Picker copy "the rest is paid to the tutor directly" still needs Krishna's OK.
 - Taken times aren't shown on the timetable (only open times come from the server).
 - The e2e test "rescheduling isn't offered inside 24 hours" skips itself if the earliest slot happens to be more than 24h away at that time of day.
 - In `next dev`, a click before the page finishes loading can be lost (seen with the demo button); the production build is fine (e2e).
