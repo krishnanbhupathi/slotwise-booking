@@ -2,7 +2,22 @@
 
 Booking and deposits for solo tutors. A tutor shares one link. Students pick a time shown in their own time zone, pay a deposit, and get a confirmation. That means no back-and-forth, and fewer no-shows.
 
-> **Status:** in active development (16–22 Oct 2026). See [PROGRESS.md](./PROGRESS.md) for what's done and what's next.
+**Live:** https://slotwise-booking-xi.vercel.app. Click **Try the demo**, or book as a student at [/book/demo-tutor](https://slotwise-booking-xi.vercel.app/book/demo-tutor) (Stripe test mode: card `4242 4242 4242 4242`). Decisions and daily notes: [PROGRESS.md](./PROGRESS.md).
+
+![The Slotwise booking page: a week timetable of open times in the subject's colour, with a picked time and the deposit shown on the right](docs/screenshots/booking.png)
+
+## Measured
+Figures from production, with the raw data in [`docs/measurements`](docs/measurements).
+
+| Page | Lighthouse mobile (Perf / A11y / Best practices / SEO) | Mobile LCP | Desktop |
+|---|---|---|---|
+| Home | 98 / 100 / 100 / 100 | 2.0 s | 100 on all four, LCP 0.5 s |
+| Tutor page | 99 / 100 / 100 / 100 | 2.0 s | 100 on all four, LCP 0.5 s |
+| Booking page (week timetable + intake questions) | 98 / 100 / 100 / 100 | 2.3 s | 100 on all four, LCP 0.3 s |
+
+Median of 3 runs, Lighthouse 12.8.2 with default throttling, measured from India against the US region ([summary](docs/measurements/lighthouse-2026-10-14-timetable/SUMMARY.md)).
+
+**Tests:** 156 Vitest tests (unit, plus database tests on PGlite) and 18 Playwright runs (9 tests on desktop Chrome and Pixel 7, against a production build and real Postgres), all green in CI.
 
 ## Features
 
@@ -13,13 +28,21 @@ Booking and deposits for solo tutors. A tutor shares one link. Students pick a t
 | ✅ | Services: duration, price, deposit, buffer between bookings; archive instead of delete once booked |
 | ✅ | Weekly hours (several ranges per day) and date changes (days off, custom hours) |
 | ✅ | Double-booking prevention enforced by Postgres (see below) |
-| ✅ | Slot picker across time zones and daylight-saving changes, shown in the student's zone |
+| ✅ | Booking page as a week timetable (one day at a time on phones), across time zones and daylight-saving changes, shown in the student's zone |
+| ✅ | Intake questions built in [Formwise](https://github.com/krishnanbhupathi/formwise-builder): attach a published form to a service, answers validated on the server and shown to the tutor |
 | ✅ | Stripe Checkout deposit (test mode), 10-minute hold, idempotent webhooks, auto-refund of late payments for taken slots |
 | ✅ | Free services confirm instantly |
 | ✅ | Confirmation email with `.ics`, 24-hour reminder, cancel/reschedule emails that update the calendar event |
 | ✅ | Client cancel (deposit refunded until 24h before) and reschedule (deposit carries over) |
 | ✅ | Provider dashboard: upcoming bookings (cancel with refund) and payments |
 | ✅ | Demo account reset nightly, with sample bookings |
+
+## Design
+The look is a **school timetable**, the week grid students already know.
+- **Booking page:** days across, times down. Each open time is a block in the subject's colour; closed days are hatched. On phones it becomes one day at a time.
+- **One colour per subject:** each service gets a colour in the order the tutor created it ([`src/lib/subjects.ts`](./src/lib/subjects.ts)). The colour follows the lesson everywhere: tutor page, booking slip, confirmation, dashboard.
+- **Type:** Gabarito for headings, times and prices; Lexend for text. Atkinson Hyperlegible was the first choice, but its slashed zero made prices read like "$1θ.θθ".
+- The neutrals replace Tailwind's `stone` scale in [`globals.css`](./src/app/globals.css), so every screen shares one palette.
 
 ## Stack
 
@@ -78,6 +101,10 @@ npm run lint
 
 **Writes are scoped by owner.** Every update and delete filters on `provider_id` as well as the row `id`, so a forged id can't touch another provider's data. Tests cover this.
 
+**Intake forms are copies, validated twice.** A tutor pastes a Formwise share link. The server fetches the published form only from the Formwise origin (`FORMWISE_ORIGIN`), validates it with Formwise's own `parseFormSchema`, and stores a copy on the service. Students answer with Formwise's `<FormFields>` inside Slotwise's booking form, and the server action re-validates the answers before creating any hold or Stripe session. The renderer is vendored in `src/vendor/formwise` by a sync script that records the source commit. *Trade-off:* changes published in Formwise appear only after the tutor clicks Refresh, but bookings never depend on Formwise being up.
+
+**The timetable is built by a pure function.** [`src/lib/timetable.ts`](./src/lib/timetable.ts) turns slot starts into Monday-first weeks in the viewer's zone, so the same grid renders on server and client, and tests pin the edge cases (week boundaries, a slot that falls on the next day in Kolkata). *Trade-off:* each service has its own timetable; a combined week across subjects would need a new page and loading every service's slots.
+
 **Deposits go to one platform Stripe account (no Connect).** This keeps v1 small. The `providers.stripe_account` column is reserved for moving to Stripe Connect later.
 
 ## Data model
@@ -99,3 +126,9 @@ npm run lint
 Vercel runs `npm run db:migrate && npm run build` (see `vercel.json`). Set the variables from `.env.example` in the Vercel project. Use Neon's **pooled** connection string for `DATABASE_URL`. In the Stripe dashboard (test mode), add a webhook endpoint at `https://<your-domain>/api/stripe/webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `checkout.session.expired`, and put its signing secret in `STRIPE_WEBHOOK_SECRET`.
 
 Scheduled jobs: set a random `CRON_SECRET` on Vercel, and add GitHub repository secrets `APP_URL` (the production URL) and `CRON_SECRET` (same value). The workflow skips quietly until both are set.
+
+## Known limitations
+- Taken times aren't shown on the timetable; the server only sends open times, so a taken slot simply isn't there.
+- A failed email isn't retried (no outbox table yet).
+- Intake conditions only support "equals one value" (a Formwise limitation).
+- Sessions can't be revoked server-side before they expire (JWT cookies).

@@ -2,7 +2,16 @@
 
 Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7 Thu 22 Oct 2026.
 
-## Status: Day 6 (intake forms from Formwise)
+## Status: Day 7 (measure, polish, ship)
+
+- **Live:** https://slotwise-booking-xi.vercel.app. Deposits work end to end in Stripe test mode, and emails send from `mail.bhupathi.dev`.
+- **Restyle:** Visual identity changed to a school timetable (Krishna chose option C from three mockups): week grid booking page (days across, times down, closed days hatched; one day at a time on phones), one colour per subject assigned by service creation order (`lib/subjects.ts`), Gabarito for headings/times/prices and Lexend for text (Atkinson Hyperlegible was planned, but its slashed zero made prices read as "$1θ.θθ"). A combined multi-subject week was out of MVP scope: each service still has its own timetable. Taken slots aren't shown (the server only sends open times).
+- **Measured** (production, median of 3 Lighthouse runs, `docs/measurements/lighthouse-2026-10-14-timetable`): mobile performance 98 / 99 / 98 (home / tutor / booking), accessibility 100 everywhere, mobile LCP 2.0 / 2.0 / 2.3 s; desktop 100 across the board.
+- **Tests:** 156 Vitest + 18 Playwright runs, green in CI. E2E picks times through `e2e/slots.ts`, which works in both the week and day views.
+- **README:** live link, screenshot, measurements, design, known limitations.
+- **Next:** the ~90 s video (Playwright recording, Deepgram Aura-2 "Thalia" voiceover, captions), case-study page on bhupathi.dev.
+
+## Earlier status: Day 6 (intake forms from Formwise)
 
 **Day 6 (15 Oct): clients now answer a tutor's Formwise form when booking.** Deployed and smoke-tested on production; CI green.
 - **Attaching a form:** a tutor pastes a Formwise share link on a service (`src/app/dashboard/services/intake-section.tsx`).
@@ -63,9 +72,9 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 - Mobile check via Playwright screenshots: picker and dashboard OK; weekly-hours editor fixed for phones.
 - Tests: **131 unit/integration (Vitest) + 14 e2e (Playwright)**, all passing locally and in CI.
 
-### Next
-1. **Unblock deploy** (Krishna's accounts), then deploy, seed production, set the cron secrets, and run a real Stripe test payment both locally (Stripe CLI) and on Vercel. Fix whatever breaks first.
-2. Day 4 (Mon 19 Oct): form builder: schema, palette, drag-and-drop canvas, properties panel, live preview (new repo).
+### Next (as of Day 3; done since)
+1. ~~Unblock deploy~~: deployed, seeded, cron secrets set, live Stripe test payment confirmed.
+2. ~~Day 4: form builder~~: built as Formwise.
 
 ### Decisions
 | Date | Decision | Why |
@@ -109,9 +118,8 @@ Spec: "Case Study Build Plan" (Claude Doc). Timeline: Day 1 Fri 16 Oct → Day 7
 - Intake conditions only support "equals one value" (a Formwise limitation).
 - Browser automation (Claude in Chrome) sometimes loses the first click on a freshly loaded page; Playwright (which clicks immediately) passes, so treated as a tooling artefact, not an app bug.
 - Picker copy "the rest is paid to the tutor directly" still needs Krishna's OK.
+- Taken times aren't shown on the timetable (only open times come from the server).
 - The e2e test "rescheduling isn't offered inside 24 hours" skips itself if the earliest slot happens to be more than 24h away at that time of day.
 - In `next dev`, a click before the page finishes loading can be lost (seen with the demo button); the production build is fine (e2e).
 - No rate limit on holds; no email outbox/retry; a provider can't change their time zone after onboarding.
 - Auth.js v5 is a beta release (pinned to `5.0.0-beta.32`).
-
-**Day 7 restyle (15 Oct):** Visual identity changed to a school timetable (Krishna chose option C from three mockups): week grid booking page (days across, times down, closed days hatched; one day at a time on phones), one colour per subject assigned by service creation order (`lib/subjects.ts`), Gabarito for headings/times/prices and Lexend for text (Atkinson Hyperlegible was planned, but its slashed zero made prices read as "$1θ.θθ"). A combined multi-subject week was out of MVP scope: each service still has its own timetable. Taken slots aren't shown (the server only sends open times).
