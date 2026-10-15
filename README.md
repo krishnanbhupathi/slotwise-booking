@@ -4,6 +4,8 @@ Booking and deposits for solo tutors. A tutor shares one link. Students pick a t
 
 **Live:** https://slotwise-booking-xi.vercel.app. Click **Try the demo**, or book as a student at [/book/demo-tutor](https://slotwise-booking-xi.vercel.app/book/demo-tutor) (Stripe test mode: card `4242 4242 4242 4242`). Decisions and daily notes: [PROGRESS.md](./PROGRESS.md).
 
+**Walkthrough video (90 s, narrated):** https://videos.bhupathi.dev/case-studies/slotwise.mp4
+
 ![The Slotwise booking page: a week timetable of open times in the subject's colour, with a picked time and the deposit shown on the right](docs/screenshots/booking.png)
 
 ## Measured
