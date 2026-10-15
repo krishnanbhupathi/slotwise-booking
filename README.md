@@ -160,3 +160,7 @@ Scheduled jobs: set a random `CRON_SECRET` on Vercel, and add GitHub repository 
 - Emails come from a new sending domain (`mail.bhupathi.dev`, DKIM and SPF set up), so Gmail may file the first sign-in link in Spam until the domain builds a reputation. **Try the demo** doesn't need email.
 - Intake conditions only support "equals one value" (a Formwise limitation).
 - Sessions can't be revoked server-side before they expire (JWT cookies).
+
+## License
+
+[MIT](./LICENSE)
